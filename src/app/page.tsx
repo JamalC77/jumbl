@@ -6,6 +6,7 @@ import WordInput from '@/components/WordInput';
 import GameTimer from '@/components/GameTimer';
 import WordList from '@/components/WordList';
 import GameControls from '@/components/GameControls';
+import DifficultySelector from '@/components/DifficultySelector';
 
 export default function Home() {
   return (
@@ -25,6 +26,8 @@ export default function Home() {
           <div className="md:col-span-2">
             <div className="p-4 md:p-8 bg-white rounded-xl shadow-lg">
               <div className="grid gap-8">
+                <DifficultySelector />
+                
                 <GameTimer />
                 
                 <div className="border-t border-gray-200 pt-6">
@@ -59,6 +62,7 @@ export default function Home() {
               <li>Find all words before time runs out to win!</li>
               <li>Click on a letter tile to use a hint (2 hints per game)</li>
               <li>Hints highlight words containing that letter</li>
+              <li>Choose difficulty level before starting a new game</li>
             </ul>
             <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
               <h3 className="text-lg font-semibold text-blue-700 mb-2">Tips</h3>

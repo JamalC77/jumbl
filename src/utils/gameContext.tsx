@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { WordSet, getRandomWordSet } from "./gameData";
+import { WordSet, getRandomWordSet, logGameDataForTesting } from "./gameData";
 import { WordDifficulty } from "./openAiService";
 
 // Default game duration in seconds (5 minutes)
@@ -28,6 +28,8 @@ interface GameContextType {
   activeHintLetters: string[];
   useHint: (letter: string) => boolean;
   clearHints: () => void;
+  gameDifficulty: string;
+  setGameDifficulty: (difficulty: string) => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -43,6 +45,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [hintsRemaining, setHintsRemaining] = useState<number>(2);
   const [activeHintLetters, setActiveHintLetters] = useState<string[]>([]);
+  const [gameDifficulty, setGameDifficulty] = useState<string>("normal");
 
   // Effect to reset to JUMBL when game is not active
   useEffect(() => {
@@ -55,7 +58,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const fetchRandomWordSet = async (): Promise<WordSet> => {
     setIsLoading(true);
     try {
-      const wordSet = await getRandomWordSet();
+      const wordSet = await getRandomWordSet(gameDifficulty);
       return wordSet;
     } catch (error) {
       console.error("Error fetching random word set:", error);
@@ -93,6 +96,9 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const newWordSet = await fetchRandomWordSet();
       setCurrentWordSet(newWordSet);
+      
+      // Log game data for testing in dev console
+      logGameDataForTesting(newWordSet);
       
       // Set up game state
       setLetters(newWordSet.letters);
@@ -243,6 +249,8 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     activeHintLetters,
     useHint,
     clearHints,
+    gameDifficulty,
+    setGameDifficulty,
   };
 
   return (

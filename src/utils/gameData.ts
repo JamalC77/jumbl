@@ -3,18 +3,10 @@ export interface WordSet {
   words: string[];
   wordLength: number;
   wordDifficulties?: Map<string, string>; // Map of words to their difficulty
+  gameDifficulty?: string; // Overall game difficulty
 }
 
-import { analyzeWordDifficulty, WordWithDifficulty, WordDifficulty } from './openAiService';
-
-// Define our word list - these are 5-letter words from the provided list
-// We're extracting a much larger list of words from the provided word list
-const WORD_LIST = [
-  // First section (a-c)
-  "aback", "abaft", "abase", "abate", "abbey", "abbot", "abhor", "abide", "abler", "abode",
-  "about", "above", "abuse", "abyss", "ached", "aches", "acids", "acorn", "acres", "acrid",
-  // ... rest of the word list remains the same
-];
+import { analyzeWordDifficulty } from './openAiService';
 
 // Shuffle an array using Fisher-Yates algorithm
 const shuffleArray = <T>(array: T[]): T[] => {
@@ -39,99 +31,51 @@ const getUniqueLetters = (words: string[]): string => {
   return Array.from(letterSet).join('');
 };
 
-// Generate a random word set by picking 10 random words from our list
-export const getRandomWordSet = async (): Promise<WordSet> => {
-  // We'll try several times to get a good word set with not too many unique letters
-  const MAX_UNIQUE_LETTERS = 12; // Maximum number of unique letters for a playable set
-  let bestWordSet: { words: string[], letters: string } | null = null;
-  
-  // Try several times to find a good set
-  for (let attempt = 0; attempt < 5; attempt++) {
-    // Shuffle the word list
-    const shuffledWords = shuffleArray(WORD_LIST);
+// Function to fetch random words from our API
+const fetchRandomWords = async (difficulty?: string): Promise<{ words: string[], difficulty: string }> => {
+  try {
+    // Build the URL with optional difficulty parameter
+    const url = difficulty 
+      ? `/api/words?difficulty=${difficulty}`
+      : '/api/words';
     
-    // Start by picking the first word
-    const selectedWords: string[] = [shuffledWords[0].toUpperCase()];
-    
-    // Create a set of letters from the first word
-    const letterSet = new Set<string>();
-    selectedWords[0].split('').forEach(letter => letterSet.add(letter.toLowerCase()));
-    
-    // Try to find 9 more words that use the same letters when possible
-    let wordsFound = 1;
-    let index = 1;
-    
-    // Keep trying words until we have 10 or run out of candidates
-    while (wordsFound < 10 && index < shuffledWords.length) {
-      const candidate = shuffledWords[index].toUpperCase();
-      
-      // Check if the candidate word shares at least 2 letters with our letter set
-      let sharedLetters = 0;
-      const candidateLetters = new Set<string>();
-      
-      for (const letter of candidate.toLowerCase()) {
-        candidateLetters.add(letter);
-        if (letterSet.has(letter)) {
-          sharedLetters++;
-        }
-      }
-      
-      // If adding this word would exceed our letter limit, skip it
-      const potentialNewLetters = new Set([...letterSet, ...candidateLetters]);
-      
-      // Add word if it shares at least 2 letters with our set and won't exceed letter limit
-      if (sharedLetters >= 2 && potentialNewLetters.size <= MAX_UNIQUE_LETTERS) {
-        selectedWords.push(candidate);
-        wordsFound++;
-        
-        // Update our letter set
-        candidateLetters.forEach(letter => letterSet.add(letter));
-      }
-      
-      index++;
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch words: ${response.statusText}`);
     }
     
-    // If we couldn't find 10 related words, try to fill out the set
-    // while keeping the unique letter count under control
-    if (selectedWords.length < 10) {
-      for (let i = index; i < shuffledWords.length && selectedWords.length < 10; i++) {
-        const candidate = shuffledWords[i].toUpperCase();
-        const candidateLetters = new Set<string>();
-        
-        for (const letter of candidate.toLowerCase()) {
-          candidateLetters.add(letter);
-        }
-        
-        // Check if adding this word would keep us under the letter limit
-        const potentialNewLetters = new Set([...letterSet, ...candidateLetters]);
-        if (potentialNewLetters.size <= MAX_UNIQUE_LETTERS) {
-          selectedWords.push(candidate);
-          candidateLetters.forEach(letter => letterSet.add(letter));
-        }
-      }
-    }
-    
-    const letters = Array.from(letterSet).join('').toUpperCase();
-    
-    // If we got 10 words or this attempt is better than previous ones, save it
-    if (selectedWords.length === 10 && 
-        (!bestWordSet || letterSet.size < bestWordSet.letters.length)) {
-      bestWordSet = {
-        words: selectedWords,
-        letters: letters
-      };
-    }
+    const data = await response.json();
+    return { 
+      words: data.words,
+      difficulty: data.difficulty
+    };
+  } catch (error) {
+    console.error('Error fetching words:', error);
+    // Return a fallback set of words if the API fails
+    return {
+      words: [
+        "ABOUT", "ABOVE", "ABUSE", "ACTOR", "ADAPT", 
+        "ADMIT", "ADOPT", "ADULT", "AFTER", "AGAIN"
+      ],
+      difficulty: difficulty || 'normal'
+    };
   }
-  
-  // If we found a good set, use it
-  if (bestWordSet && bestWordSet.words.length === 10) {
-    const wordLength = bestWordSet.words[0].length;
+};
+
+// Generate a random word set by fetching 10 random words from our API
+export const getRandomWordSet = async (difficulty?: string): Promise<WordSet> => {
+  try {
+    // Fetch 10 random words from our API with optional difficulty
+    const { words, difficulty: actualDifficulty } = await fetchRandomWords(difficulty);
+    
+    // Get all unique letters from these words
+    const allLetters = getUniqueLetters(words);
     
     // Analyze word difficulties using OpenAI
     const wordDifficulties = new Map<string, string>();
     
     try {
-      const difficultyAnalysis = await analyzeWordDifficulty(bestWordSet.words);
+      const difficultyAnalysis = await analyzeWordDifficulty(words);
       
       // Store difficulty ratings
       difficultyAnalysis.forEach(item => {
@@ -144,37 +88,31 @@ export const getRandomWordSet = async (): Promise<WordSet> => {
     }
     
     return {
-      letters: shuffleArray(bestWordSet.letters.split('')).join(''),
-      words: bestWordSet.words,
-      wordLength,
-      wordDifficulties
+      letters: shuffleArray(allLetters.split('')).join(''),
+      words: words,
+      wordLength: words[0].length,
+      wordDifficulties,
+      gameDifficulty: actualDifficulty
+    };
+  } catch (error) {
+    console.error("Error generating word set:", error);
+    
+    // Fallback: Use a predefined set of words
+    const fallbackWords = [
+      "ABOUT", "ABOVE", "ABUSE", "ACTOR", "ADAPT", 
+      "ADMIT", "ADOPT", "ADULT", "AFTER", "AGAIN"
+    ];
+    
+    const allLetters = getUniqueLetters(fallbackWords);
+    
+    return {
+      letters: shuffleArray(allLetters.split('')).join(''),
+      words: fallbackWords,
+      wordLength: fallbackWords[0].length,
+      wordDifficulties: new Map(),
+      gameDifficulty: difficulty || 'normal'
     };
   }
-  
-  // Fallback: Just pick 10 random words if we couldn't find a good set
-  const fallbackWords = shuffleArray(WORD_LIST).slice(0, 10).map(w => w.toUpperCase());
-  const allLetters = getUniqueLetters(fallbackWords);
-  
-  // Analyze word difficulties for fallback words
-  const wordDifficulties = new Map<string, string>();
-  
-  try {
-    const difficultyAnalysis = await analyzeWordDifficulty(fallbackWords);
-    
-    // Store difficulty ratings
-    difficultyAnalysis.forEach(item => {
-      wordDifficulties.set(item.word, item.difficulty);
-    });
-  } catch (error) {
-    console.error("Failed to analyze fallback word difficulties:", error);
-  }
-  
-  return {
-    letters: shuffleArray(allLetters.split('')).join(''),
-    words: fallbackWords,
-    wordLength: fallbackWords[0].length,
-    wordDifficulties
-  };
 };
 
 // Function to check if a word is valid for the given letter set
@@ -195,4 +133,19 @@ export const isValidWord = (word: string, letters: string): boolean => {
   }
   
   return true;
+};
+
+// Utility function to expose game data for testing via console
+export const logGameDataForTesting = (wordSet: WordSet | null): void => {
+  if (!wordSet) {
+    console.log("No active word set available");
+    return;
+  }
+  
+  console.log("Current Game Data for Testing:");
+  console.log("Available letters:", wordSet.letters);
+  console.log("Target words:", wordSet.words);
+  console.log("Game difficulty:", wordSet.gameDifficulty || "normal");
+  console.log("Word difficulties:", wordSet.wordDifficulties ? 
+    Object.fromEntries(wordSet.wordDifficulties) : "Not available");
 }; 
