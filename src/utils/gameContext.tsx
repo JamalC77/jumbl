@@ -24,6 +24,10 @@ interface GameContextType {
   currentScore: number;
   isLoading: boolean;
   getWordDifficulty: (word: string) => WordDifficulty;
+  hintsRemaining: number;
+  activeHintLetters: string[];
+  useHint: (letter: string) => boolean;
+  clearHints: () => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -37,6 +41,8 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [gameCompleted, setGameCompleted] = useState<boolean>(false);
   const [timerInterval, setTimerInterval] = useState<NodeJS.Timeout | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [hintsRemaining, setHintsRemaining] = useState<number>(2);
+  const [activeHintLetters, setActiveHintLetters] = useState<string[]>([]);
 
   // Effect to reset to JUMBL when game is not active
   useEffect(() => {
@@ -94,6 +100,8 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setFoundWords([]);
       setGameActive(true);
       setGameCompleted(false);
+      setHintsRemaining(2);
+      setActiveHintLetters([]);
       
       // Shuffle letters on start
       const shuffled = newWordSet.letters.split("").sort(() => Math.random() - 0.5).join("");
@@ -143,6 +151,8 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setRemainingTime(DEFAULT_GAME_DURATION);
     setGameActive(false);
     setGameCompleted(false);
+    setHintsRemaining(2);
+    setActiveHintLetters([]);
     // Return to JUMBL
     setLetters("JUMBL");
   };
@@ -178,6 +188,31 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return false;
   };
 
+  // Use a hint by clicking on a letter
+  const useHint = (letter: string): boolean => {
+    // Can only use hints during active game and if hints are remaining
+    if (!gameActive || hintsRemaining <= 0) {
+      return false;
+    }
+    
+    // Check if letter is already active as a hint
+    if (activeHintLetters.includes(letter)) {
+      // Remove this hint letter (toggle behavior)
+      setActiveHintLetters(prev => prev.filter(l => l !== letter));
+      return true;
+    }
+    
+    // Decrement hint count and add to active hint letters
+    setHintsRemaining(prev => prev - 1);
+    setActiveHintLetters(prev => [...prev, letter]);
+    return true;
+  };
+  
+  // Clear all active hints
+  const clearHints = () => {
+    setActiveHintLetters([]);
+  };
+
   // Clean up on unmount
   useEffect(() => {
     return () => {
@@ -204,6 +239,10 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     currentScore: foundWords.length,
     isLoading,
     getWordDifficulty,
+    hintsRemaining,
+    activeHintLetters,
+    useHint,
+    clearHints,
   };
 
   return (

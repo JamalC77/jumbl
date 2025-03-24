@@ -57,10 +57,16 @@ export default function Home() {
               <li>Words must be formed using the letters shown</li>
               <li>You can use the Shuffle button to rearrange letters</li>
               <li>Find all words before time runs out to win!</li>
+              <li>Click on a letter tile to use a hint (2 hints per game)</li>
+              <li>Hints highlight words containing that letter</li>
             </ul>
             <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
               <h3 className="text-lg font-semibold text-blue-700 mb-2">Tips</h3>
               <p className="text-blue-600 text-sm">Look for common prefixes and suffixes. Try different combinations of the first and last letters to discover more words!</p>
+            </div>
+            <div className="mt-4 p-4 bg-yellow-50 rounded-lg border border-yellow-100">
+              <h3 className="text-lg font-semibold text-yellow-700 mb-2">Hint System</h3>
+              <p className="text-yellow-600 text-sm">Use your hints wisely! Each game you get 2 hints. Click on a letter tile to see which words use that letter.</p>
             </div>
           </div>
         </div>

@@ -41,7 +41,13 @@ const DifficultyBadge: React.FC<{ difficulty: WordDifficulty }> = ({ difficulty 
 };
 
 const WordList: React.FC = () => {
-  const { foundWords, totalWords, getWordDifficulty, currentWordSet } = useGame();
+  const { 
+    foundWords, 
+    totalWords, 
+    getWordDifficulty, 
+    currentWordSet,
+    activeHintLetters 
+  } = useGame();
   
   const container = {
     hidden: { opacity: 1 },
@@ -65,24 +71,100 @@ const WordList: React.FC = () => {
   const allWords = currentWordSet?.words || [];
   
   // Colors for word boxes (gradient from yellow to green)
-  const getWordColor = (index: number, isFound: boolean) => {
-    if (!isFound) {
-      return 'bg-gray-50 border-gray-200 text-gray-400';
+  const getWordColor = (index: number, isFound: boolean, containsHint: boolean) => {
+    if (isFound) {
+      const colors = [
+        'bg-yellow-100 border-yellow-300 text-yellow-800',
+        'bg-lime-100 border-lime-300 text-lime-800',
+        'bg-green-100 border-green-300 text-green-800',
+        'bg-emerald-100 border-emerald-300 text-emerald-800',
+        'bg-teal-100 border-teal-300 text-teal-800',
+        'bg-cyan-100 border-cyan-300 text-cyan-800',
+        'bg-sky-100 border-sky-300 text-sky-800',
+        'bg-blue-100 border-blue-300 text-blue-800',
+        'bg-indigo-100 border-indigo-300 text-indigo-800',
+        'bg-violet-100 border-violet-300 text-violet-800',
+      ];
+      return colors[index % colors.length];
     }
     
-    const colors = [
-      'bg-yellow-100 border-yellow-300 text-yellow-800',
-      'bg-lime-100 border-lime-300 text-lime-800',
-      'bg-green-100 border-green-300 text-green-800',
-      'bg-emerald-100 border-emerald-300 text-emerald-800',
-      'bg-teal-100 border-teal-300 text-teal-800',
-      'bg-cyan-100 border-cyan-300 text-cyan-800',
-      'bg-sky-100 border-sky-300 text-sky-800',
-      'bg-blue-100 border-blue-300 text-blue-800',
-      'bg-indigo-100 border-indigo-300 text-indigo-800',
-      'bg-violet-100 border-violet-300 text-violet-800',
-    ];
-    return colors[index % colors.length];
+    // Unfound word with hint - slightly highlighted bg
+    if (containsHint && activeHintLetters.length > 0) {
+      return 'bg-yellow-50 border-yellow-200 text-gray-600';
+    }
+    
+    // Regular unfound word
+    return 'bg-gray-50 border-gray-200 text-gray-400';
+  };
+  
+  // Check if a word contains any of the active hint letters
+  const wordContainsHintLetters = (word: string): boolean => {
+    if (activeHintLetters.length === 0) return false;
+    return activeHintLetters.some(letter => word.includes(letter));
+  };
+  
+  // Highlight the hint letters in a found word
+  const highlightHintLetters = (word: string): React.ReactNode => {
+    if (activeHintLetters.length === 0) return word;
+    
+    // Create a set of active hint letters for faster lookups
+    const hintLetterSet = new Set(activeHintLetters);
+    
+    // Split the word into individual characters for rendering
+    return (
+      <div className="flex justify-center">
+        {word.split('').map((letter, index) => {
+          if (hintLetterSet.has(letter)) {
+            return (
+              <span key={index} className="text-yellow-500 font-bold underline">
+                {letter}
+              </span>
+            );
+          }
+          return <span key={index}>{letter}</span>;
+        })}
+      </div>
+    );
+  };
+  
+  // Display unfound word with hint letters revealed
+  const displayUnfoundWord = (word: string): React.ReactNode => {
+    if (activeHintLetters.length === 0 || !wordContainsHintLetters(word)) {
+      return '?';
+    }
+    
+    // Create a set of active hint letters for faster lookups
+    const hintLetterSet = new Set(activeHintLetters);
+    
+    // Create spacing between letters for better readability
+    return (
+      <div className="flex justify-center space-x-1">
+        {word.split('').map((letter, index) => {
+          if (hintLetterSet.has(letter)) {
+            return (
+              <motion.span 
+                key={index} 
+                className="text-yellow-500 font-bold"
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ 
+                  opacity: 1, 
+                  scale: 1,
+                  boxShadow: ["0px 0px 0px rgba(255, 215, 0, 0)", "0px 0px 8px rgba(255, 215, 0, 0.5)", "0px 0px 0px rgba(255, 215, 0, 0)"],
+                }}
+                transition={{ 
+                  duration: 2,
+                  repeat: Infinity,
+                  repeatType: "reverse"
+                }}
+              >
+                {letter}
+              </motion.span>
+            );
+          }
+          return <span key={index} className="text-gray-400">?</span>;
+        })}
+      </div>
+    );
   };
   
   return (
@@ -104,19 +186,21 @@ const WordList: React.FC = () => {
           {allWords.map((word: string, index: number) => {
             const isFound = foundWords.includes(word);
             const difficulty = getWordDifficulty(word);
+            const containsHint = wordContainsHintLetters(word);
             
             return (
               <motion.div
                 key={word}
                 variants={item}
                 className={`border rounded-lg p-3 text-center 
-                          font-medium shadow-sm ${getWordColor(index, isFound)}`}
+                          font-medium shadow-sm ${getWordColor(index, isFound, containsHint)}
+                          ${containsHint && activeHintLetters.length > 0 ? 'ring-2 ring-yellow-400' : ''}`}
                 layout
                 whileHover={{ scale: 1.03 }}
               >
                 <div className="flex flex-col items-center">
                   <span className="text-lg mb-1">
-                    {isFound ? word : '?'}
+                    {isFound ? highlightHintLetters(word) : displayUnfoundWord(word)}
                   </span>
                   <DifficultyBadge difficulty={difficulty || "medium"} />
                 </div>
