@@ -70,7 +70,7 @@ export default function Home() {
             </div>
             <div className="mt-4 p-4 bg-yellow-50 rounded-lg border border-yellow-100">
               <h3 className="text-lg font-semibold text-yellow-700 mb-2">Hint System</h3>
-              <p className="text-yellow-600 text-sm">Use your hints wisely! Each game you get 2 hints. Click on a letter tile to see which words use that letter.</p>
+              <p className="text-yellow-600 text-sm">Use your hints wisely! Each game you get 5 hints. Click on a letter tile to see which words use that letter.</p>
             </div>
           </div>
         </div>
