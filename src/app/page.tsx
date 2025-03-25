@@ -9,12 +9,11 @@ import GameControls from '@/components/GameControls';
 import DifficultySelector from '@/components/DifficultySelector';
 import GameSummary from '@/components/GameSummary';
 import ChallengeMode from '@/components/ChallengeMode';
-import ChallengeTimer from '@/components/ChallengeTimer';
 import { useGame } from '@/utils/gameContext';
 
 // Wrapper component to access game context for conditional rendering
 const GameContent = () => {
-  const { gameCompleted, gameActive, isChallenge, challengeTimeRemaining } = useGame();
+  const { gameCompleted, gameActive, isChallenge } = useGame();
 
   return (
     <div className="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -22,10 +21,7 @@ const GameContent = () => {
       <div className="md:col-span-2">
         <div className="p-4 md:p-8 bg-white rounded-xl shadow-lg">
           <div className="grid gap-8">
-            {/* Challenge Timer - only show before game starts */}
-            {!gameActive && !gameCompleted && isChallenge && challengeTimeRemaining && (
-              <ChallengeTimer />
-            )}
+            {/* Challenge Timer removed since challenges are asynchronous */}
             
             <DifficultySelector />
             
@@ -91,8 +87,8 @@ const GameContent = () => {
           <p className="text-green-600 text-sm">After a game, share your exact puzzle with friends by using the &ldquo;Share Results&rdquo; button. They&apos;ll play the same words!</p>
         </div>
         <div className="mt-4 p-4 bg-purple-50 rounded-lg border border-purple-100">
-          <h3 className="text-lg font-semibold text-purple-700 mb-2">Head-to-Head Mode</h3>
-          <p className="text-purple-600 text-sm">Use the Head-to-Head Challenge feature to generate a link for you and a friend to start the same puzzle at exactly the same time!</p>
+          <h3 className="text-lg font-semibold text-purple-700 mb-2">Challenge Mode</h3>
+          <p className="text-purple-600 text-sm">Use the Challenge Mode feature to generate a link for you and friends to play the same puzzle. Compare scores to see who found the most words!</p>
         </div>
       </div>
     </div>

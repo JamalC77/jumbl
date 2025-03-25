@@ -128,7 +128,7 @@ const GameControls: React.FC = () => {
               </motion.div>
             )}
             
-            <div className="flex justify-center mt-2">
+            {/* <div className="flex justify-center mt-2">
               <motion.button
                 className="px-4 py-2 bg-gray-500 text-white font-medium rounded-full shadow-md"
                 onClick={() => setShowCustomTimeInput(!showCustomTimeInput)}
@@ -137,7 +137,7 @@ const GameControls: React.FC = () => {
               >
                 {showCustomTimeInput ? "Hide Custom Time" : "Custom Time"}
               </motion.button>
-            </div>
+            </div> */}
             
             {showCustomTimeInput && (
               <motion.div 

@@ -9,10 +9,9 @@ const ChallengeMode: React.FC = () => {
   const [seedGenerated, setSeedGenerated] = useState<boolean>(false);
   const [challengeSeed, setChallengeSeed] = useState<string>("");
   const [challengeLink, setChallengeLink] = useState<string>("");
-  const [challengeTime, setChallengeTime] = useState<number>(300); // 5 minutes
+  const [challengeTime, setChallengeTime] = useState<number>(5); // 5 minutes (in minutes)
   const [seedInput, setSeedInput] = useState<string>("");
   const [seedError, setSeedError] = useState<string>("");
-  const [countdownTime, setCountdownTime] = useState<number>(5); // 5 minute countdown
 
   // Generate a new challenge seed
   const generateChallenge = () => {
@@ -29,7 +28,7 @@ const ChallengeMode: React.FC = () => {
             gameDifficulty: "normal"
           }));
           setChallengeSeed(seed);
-          setChallengeLink(`${window.location.origin}${window.location.pathname}?seed=${seed}&challenge=true&time=${Date.now() + (countdownTime * 60 * 1000)}`);
+          setChallengeLink(`${window.location.origin}${window.location.pathname}?seed=${seed}&challenge=true`);
           setSeedGenerated(true);
         })
         .catch(console.error);
@@ -37,7 +36,7 @@ const ChallengeMode: React.FC = () => {
       // If we have a current word set, use it to generate the seed
       const seed = generateGameSeed();
       setChallengeSeed(seed);
-      setChallengeLink(`${window.location.origin}${window.location.pathname}?seed=${seed}&challenge=true&time=${Date.now() + (countdownTime * 60 * 1000)}`);
+      setChallengeLink(`${window.location.origin}${window.location.pathname}?seed=${seed}&challenge=true`);
       setSeedGenerated(true);
     }
   };
@@ -63,7 +62,8 @@ const ChallengeMode: React.FC = () => {
         return;
       }
 
-      const success = await startGameWithSeed(seed, challengeTime);
+      // Convert minutes to seconds for the game duration
+      const success = await startGameWithSeed(seed, challengeTime * 60);
       if (!success) {
         setSeedError("Invalid seed or failed to load challenge");
       } else {
@@ -79,7 +79,7 @@ const ChallengeMode: React.FC = () => {
   // Copy challenge link to clipboard
   const copyLink = () => {
     navigator.clipboard.writeText(challengeLink)
-      .then(() => alert('Challenge link copied! Share with your friend to start at the same time!'))
+      .then(() => alert('Challenge link copied! Share with your friend to play the same puzzle!'))
       .catch(console.error);
   };
 
@@ -88,43 +88,26 @@ const ChallengeMode: React.FC = () => {
 
   return (
     <div className="w-full bg-white rounded-xl p-6 shadow-md border border-indigo-100">
-      <h2 className="text-2xl font-bold text-indigo-700 mb-4">Head-to-Head Challenge</h2>
+      <h2 className="text-2xl font-bold text-indigo-700 mb-4">Challenge Mode</h2>
 
       {!seedGenerated ? (
         <div className="space-y-6">
           <p className="text-gray-700">
-            Create a challenge link that you and a friend can use to play the exact same game at the same time. 
-            Perfect for competitive play!
+            Create a challenge link that you and friends can use to play the exact same game. 
+            Perfect for comparing your skills on the same puzzle!
           </p>
 
           <div className="space-y-3">
             <label className="block text-sm font-medium text-gray-700">
-              Time window to start the challenge (minutes):
-            </label>
-            <input
-              type="number"
-              value={countdownTime}
-              onChange={(e) => setCountdownTime(Math.max(1, Math.min(60, parseInt(e.target.value) || 5)))}
-              className={inputClass}
-              min="1"
-              max="60"
-            />
-            <p className="text-sm text-gray-500">
-              This is how long the challenge link will be valid for. Both players need to start within this window.
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            <label className="block text-sm font-medium text-gray-700">
-              Game duration (seconds):
+              Game duration (minutes):
             </label>
             <input
               type="number"
               value={challengeTime}
-              onChange={(e) => setChallengeTime(Math.max(60, Math.min(3600, parseInt(e.target.value) || 300)))}
+              onChange={(e) => setChallengeTime(Math.max(1, Math.min(60, parseInt(e.target.value) || 5)))}
               className={inputClass}
-              min="60"
-              max="3600"
+              min="1"
+              max="60"
             />
           </div>
 
@@ -168,7 +151,7 @@ const ChallengeMode: React.FC = () => {
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">
             <h3 className="text-lg font-semibold text-green-700 mb-2">Challenge Ready!</h3>
             <p className="text-green-600 mb-3">
-              Share this link with your friend. You both need to start the game within {countdownTime} minutes of each other.
+              Share this link with your friends. You'll all play the exact same puzzle!
             </p>
             <div className="flex items-center">
               <input
@@ -189,10 +172,10 @@ const ChallengeMode: React.FC = () => {
           <div className="space-y-3">
             <p className="text-gray-700 font-medium">Instructions:</p>
             <ol className="list-decimal list-inside space-y-2 text-gray-600">
-              <li>Send the challenge link to your opponent</li>
-              <li>Both players should click the link at approximately the same time</li>
-              <li>The game will start with exactly the same words to find</li>
-              <li>First person to find the most words wins!</li>
+              <li>Send the challenge link to your friends</li>
+              <li>Everyone can play at their own convenience</li>
+              <li>The game will have exactly the same words to find</li>
+              <li>Compare your scores to see who found the most words!</li>
             </ol>
           </div>
 

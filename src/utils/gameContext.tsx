@@ -35,7 +35,6 @@ interface GameContextType {
   generateGameSeed: () => string;
   startGameWithSeed: (seed: string, duration?: number) => Promise<boolean>;
   isChallenge: boolean;
-  challengeTimeRemaining: number | null;
   challengeStartTime: number | null;
 }
 
@@ -55,9 +54,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [activeHintPositions, setActiveHintPositions] = useState<Map<string, number[]>>(new Map());
   const [gameDifficulty, setGameDifficulty] = useState<string>("normal");
   const [isChallenge, setIsChallenge] = useState<boolean>(false);
-  const [challengeTimeRemaining, setChallengeTimeRemaining] = useState<number | null>(null);
   const [challengeStartTime, setChallengeStartTime] = useState<number | null>(null);
-  const [challengeTimerInterval, setChallengeTimerInterval] = useState<NodeJS.Timeout | null>(null);
 
   // Effect to reset to JUMBL when game is not active
   useEffect(() => {
@@ -72,51 +69,19 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const params = new URLSearchParams(window.location.search);
       const seed = params.get('seed');
       const challenge = params.get('challenge') === 'true';
-      const challengeTime = params.get('time');
       
       if (seed) {
-        if (challenge && challengeTime) {
+        if (challenge) {
           // This is a challenge game
-          const targetTime = parseInt(challengeTime);
-          const currentTime = Date.now();
-          
-          if (targetTime > currentTime) {
-            // Challenge is still valid
-            setIsChallenge(true);
-            setChallengeStartTime(targetTime);
-            setChallengeTimeRemaining(Math.floor((targetTime - currentTime) / 1000));
-            
-            // Set up countdown timer
-            const interval = setInterval(() => {
-              setChallengeTimeRemaining(prev => {
-                if (prev && prev <= 1) {
-                  clearInterval(interval);
-                  // Auto-start game when timer reaches zero
-                  startGameWithSeed(seed);
-                  return 0;
-                }
-                return prev ? prev - 1 : 0;
-              });
-            }, 1000);
-            
-            setChallengeTimerInterval(interval);
-          } else {
-            // Challenge has expired, but still load the game
-            startGameWithSeed(seed);
-          }
+          setIsChallenge(true);
+          // Start the game immediately
+          startGameWithSeed(seed);
         } else {
           // Just a regular seed, not a challenge
           startGameWithSeed(seed);
         }
       }
     }
-    
-    // Cleanup challenge timer
-    return () => {
-      if (challengeTimerInterval) {
-        clearInterval(challengeTimerInterval);
-      }
-    };
   }, []);
 
   // Fetch a random word set
@@ -155,6 +120,16 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  // Clean URL by removing seed parameters
+  const cleanUrlParams = () => {
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('seed');
+      url.searchParams.delete('challenge');
+      window.history.replaceState({}, document.title, url.toString());
+    }
+  };
+
   // Generate a seed from the current game
   const generateGameSeed = (): string => {
     if (!currentWordSet) return "";
@@ -166,13 +141,6 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const startGameWithSeed = async (seed: string, duration = DEFAULT_GAME_DURATION): Promise<boolean> => {
     try {
       setIsLoading(true);
-      
-      // Clear any challenge timer
-      if (challengeTimerInterval) {
-        clearInterval(challengeTimerInterval);
-        setChallengeTimerInterval(null);
-        setChallengeTimeRemaining(null);
-      }
       
       const wordSet = await loadGameFromSeed(seed);
       
@@ -214,6 +182,8 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             clearInterval(interval);
             setGameActive(false);
             setGameCompleted(true);
+            // Clean URL params when game ends automatically
+            cleanUrlParams();
             return 0;
           }
           return prev - 1;
@@ -266,6 +236,8 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             clearInterval(interval);
             setGameActive(false);
             setGameCompleted(true);
+            // Clean URL params when game ends automatically
+            cleanUrlParams();
             return 0;
           }
           return prev - 1;
@@ -287,25 +259,32 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setGameCompleted(true);
     // Return to JUMBL
     setLetters("JUMBL");
+    // Clean URL params when game ends manually
+    cleanUrlParams();
   };
 
   // Reset the game
   const resetGame = () => {
     if (timerInterval) {
       clearInterval(timerInterval);
+      setTimerInterval(null);
     }
-    setFoundWords([]);
+    
+    setCurrentWordSet(null);
+    setLetters("JUMBL");
     setRemainingTime(DEFAULT_GAME_DURATION);
+    setFoundWords([]);
     setGameActive(false);
     setGameCompleted(false);
     setHintsRemaining(5);
     setActiveHintLetters([]);
     setActiveHintPositions(new Map());
     setIsChallenge(false);
-    setChallengeTimeRemaining(null);
     setChallengeStartTime(null);
     // Return to JUMBL
     setLetters("JUMBL");
+    // Clean URL params
+    cleanUrlParams();
   };
 
   // Add a found word if it's valid
@@ -393,51 +372,47 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setActiveHintPositions(new Map());
   };
 
-  // Clean up on unmount
+  // Cleanup effect
   useEffect(() => {
     return () => {
       if (timerInterval) {
         clearInterval(timerInterval);
       }
-      if (challengeTimerInterval) {
-        clearInterval(challengeTimerInterval);
-      }
     };
-  }, [timerInterval, challengeTimerInterval]);
-
-  const contextValue: GameContextType = {
-    letters,
-    foundWords,
-    remainingTime,
-    totalWords: currentWordSet?.words.length || 0,
-    gameActive,
-    gameCompleted,
-    wordLength: currentWordSet?.wordLength || 5,
-    currentWordSet,
-    addFoundWord,
-    startGame,
-    endGame,
-    resetGame,
-    shuffleLetters,
-    currentScore: foundWords.length,
-    isLoading,
-    getWordDifficulty,
-    hintsRemaining,
-    activeHintLetters,
-    activeHintPositions,
-    useHint,
-    clearHints,
-    gameDifficulty,
-    setGameDifficulty,
-    generateGameSeed,
-    startGameWithSeed,
-    isChallenge,
-    challengeTimeRemaining,
-    challengeStartTime
-  };
+  }, [timerInterval]);
 
   return (
-    <GameContext.Provider value={contextValue}>
+    <GameContext.Provider
+      value={{
+        letters,
+        foundWords,
+        remainingTime,
+        totalWords: currentWordSet?.words.length || 0,
+        gameActive,
+        gameCompleted,
+        wordLength: currentWordSet?.wordLength || letters.length,
+        currentWordSet,
+        addFoundWord,
+        startGame,
+        endGame,
+        resetGame,
+        shuffleLetters,
+        currentScore: foundWords.length,
+        isLoading,
+        getWordDifficulty,
+        hintsRemaining,
+        activeHintLetters,
+        activeHintPositions,
+        useHint,
+        clearHints,
+        gameDifficulty,
+        setGameDifficulty,
+        generateGameSeed,
+        startGameWithSeed,
+        isChallenge,
+        challengeStartTime,
+      }}
+    >
       {children}
     </GameContext.Provider>
   );
