@@ -26,6 +26,7 @@ interface GameContextType {
   getWordDifficulty: (word: string) => WordDifficulty;
   hintsRemaining: number;
   activeHintLetters: string[];
+  activeHintPositions: Map<string, number[]>;
   useHint: (letter: string) => boolean;
   clearHints: () => void;
   gameDifficulty: string;
@@ -43,8 +44,9 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [gameCompleted, setGameCompleted] = useState<boolean>(false);
   const [timerInterval, setTimerInterval] = useState<NodeJS.Timeout | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [hintsRemaining, setHintsRemaining] = useState<number>(2);
+  const [hintsRemaining, setHintsRemaining] = useState<number>(5);
   const [activeHintLetters, setActiveHintLetters] = useState<string[]>([]);
+  const [activeHintPositions, setActiveHintPositions] = useState<Map<string, number[]>>(new Map());
   const [gameDifficulty, setGameDifficulty] = useState<string>("normal");
 
   // Effect to reset to JUMBL when game is not active
@@ -106,8 +108,9 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setFoundWords([]);
       setGameActive(true);
       setGameCompleted(false);
-      setHintsRemaining(2);
+      setHintsRemaining(5);
       setActiveHintLetters([]);
+      setActiveHintPositions(new Map());
       
       // Shuffle letters on start
       const shuffled = newWordSet.letters.split("").sort(() => Math.random() - 0.5).join("");
@@ -157,8 +160,9 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setRemainingTime(DEFAULT_GAME_DURATION);
     setGameActive(false);
     setGameCompleted(false);
-    setHintsRemaining(2);
+    setHintsRemaining(5);
     setActiveHintLetters([]);
+    setActiveHintPositions(new Map());
     // Return to JUMBL
     setLetters("JUMBL");
   };
@@ -203,9 +207,37 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     // Check if letter is already active as a hint
     if (activeHintLetters.includes(letter)) {
-      // Remove this hint letter (toggle behavior)
+      // Remove this hint letter and its positions (toggle behavior)
       setActiveHintLetters(prev => prev.filter(l => l !== letter));
+      
+      // Create a new map without this letter's positions
+      const newPositions = new Map(activeHintPositions);
+      newPositions.delete(letter);
+      setActiveHintPositions(newPositions);
+      
       return true;
+    }
+    
+    // Find positions of this letter in all words
+    if (currentWordSet) {
+      const letterPositions: number[] = [];
+      
+      // Check each word in the word set
+      currentWordSet.words.forEach(word => {
+        // For each letter in the word
+        for (let i = 0; i < word.length; i++) {
+          // If the letter matches our hint letter, record its position
+          if (word[i] === letter) {
+            letterPositions.push(i);
+          }
+        }
+      });
+      
+      // Create a new map with existing positions plus this letter's positions
+      const newPositions = new Map(activeHintPositions);
+      // Use a Set to ensure unique positions
+      newPositions.set(letter, [...new Set(letterPositions)]);
+      setActiveHintPositions(newPositions);
     }
     
     // Decrement hint count and add to active hint letters
@@ -217,6 +249,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Clear all active hints
   const clearHints = () => {
     setActiveHintLetters([]);
+    setActiveHintPositions(new Map());
   };
 
   // Clean up on unmount
@@ -247,6 +280,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     getWordDifficulty,
     hintsRemaining,
     activeHintLetters,
+    activeHintPositions,
     useHint,
     clearHints,
     gameDifficulty,

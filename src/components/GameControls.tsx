@@ -7,7 +7,8 @@ import { motion } from 'framer-motion';
 const GameControls: React.FC = () => {
   const { 
     startGame, 
-    resetGame, 
+    resetGame,
+    endGame,
     gameActive, 
     gameCompleted, 
     currentScore, 
@@ -116,7 +117,7 @@ const GameControls: React.FC = () => {
       {gameActive && (
         <motion.button
           className="px-5 py-2 bg-red-500 text-white font-medium rounded-full shadow-md"
-          onClick={resetGame}
+          onClick={endGame}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           initial={{ opacity: 0 }}

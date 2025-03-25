@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useGame } from '@/utils/gameContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { WordDifficulty } from '@/utils/openAiService';
@@ -46,8 +46,28 @@ const WordList: React.FC = () => {
     totalWords, 
     getWordDifficulty, 
     currentWordSet,
-    activeHintLetters 
+    activeHintLetters,
+    activeHintPositions,
+    gameCompleted,
+    gameActive,
+    remainingTime,
+    wordLength
   } = useGame();
+  
+  // Track if the user gave up or time ran out
+  const [gaveUp, setGaveUp] = useState(false);
+  
+  // Check if the game just ended to determine if user gave up
+  useEffect(() => {
+    if (gameCompleted && !gameActive) {
+      // If time is 0, then the timer ran out
+      // Otherwise, the user gave up (used endGame directly)
+      setGaveUp(remainingTime > 0);
+    } else if (!gameCompleted) {
+      // Reset when game is not completed
+      setGaveUp(false);
+    }
+  }, [gameCompleted, gameActive, remainingTime]);
   
   const container = {
     hidden: { opacity: 1 },
@@ -88,6 +108,11 @@ const WordList: React.FC = () => {
       return colors[index % colors.length];
     }
     
+    // Game over, show unfound words with special styling
+    if (gameCompleted && !gameActive) {
+      return 'bg-red-50 border-red-200 text-gray-700';
+    }
+    
     // Unfound word with hint - slightly highlighted bg
     if (containsHint && activeHintLetters.length > 0) {
       return 'bg-yellow-50 border-yellow-200 text-gray-600';
@@ -103,18 +128,25 @@ const WordList: React.FC = () => {
     return activeHintLetters.some(letter => word.includes(letter));
   };
   
+  // Check if a specific position in a word matches any of the hint letter positions
+  const isHintPosition = (letter: string, position: number): boolean => {
+    if (activeHintLetters.length === 0) return false;
+    
+    // Check if this letter is in activeHintLetters and if this position is in the positions for this letter
+    return activeHintLetters.includes(letter) && 
+           activeHintPositions.has(letter) && 
+           activeHintPositions.get(letter)?.includes(position) || false;
+  };
+  
   // Highlight the hint letters in a found word
   const highlightHintLetters = (word: string): React.ReactNode => {
     if (activeHintLetters.length === 0) return word;
-    
-    // Create a set of active hint letters for faster lookups
-    const hintLetterSet = new Set(activeHintLetters);
     
     // Split the word into individual characters for rendering
     return (
       <div className="flex justify-center">
         {word.split('').map((letter, index) => {
-          if (hintLetterSet.has(letter)) {
+          if (isHintPosition(letter, index)) {
             return (
               <span key={index} className="text-yellow-500 font-bold underline">
                 {letter}
@@ -129,18 +161,34 @@ const WordList: React.FC = () => {
   
   // Display unfound word with hint letters revealed
   const displayUnfoundWord = (word: string): React.ReactNode => {
-    if (activeHintLetters.length === 0 || !wordContainsHintLetters(word)) {
-      return '?';
+    // Show the actual word if game completed (time ran out or user gave up)
+    if (gameCompleted && !gameActive) {
+      return (
+        <div className="flex justify-center">
+          <div className="text-gray-600 font-medium line-through decoration-red-300 decoration-2">
+            {word}
+          </div>
+        </div>
+      );
     }
     
-    // Create a set of active hint letters for faster lookups
-    const hintLetterSet = new Set(activeHintLetters);
+    if (activeHintLetters.length === 0 || !wordContainsHintLetters(word)) {
+      // Display placeholders for each letter
+      return (
+        <div className="flex justify-center space-x-1">
+          {Array(wordLength).fill('?').map((_, index) => (
+            <span key={index} className="text-gray-400">?</span>
+          ))}
+        </div>
+      );
+    }
     
     // Create spacing between letters for better readability
     return (
       <div className="flex justify-center space-x-1">
         {word.split('').map((letter, index) => {
-          if (hintLetterSet.has(letter)) {
+          // Check if this exact position is a hint
+          if (isHintPosition(letter, index)) {
             return (
               <motion.span 
                 key={index} 
@@ -161,6 +209,8 @@ const WordList: React.FC = () => {
               </motion.span>
             );
           }
+          
+          // For positions where we know there are hints but not which letters
           return <span key={index} className="text-gray-400">?</span>;
         })}
       </div>
@@ -175,6 +225,23 @@ const WordList: React.FC = () => {
           {foundWords.length} / {totalWords}
         </div>
       </div>
+      
+      {gameCompleted && !gameActive && (
+        <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg text-center">
+          <p className="text-amber-700 font-medium">
+            {foundWords.length === totalWords 
+              ? "Congratulations, you found all the words!" 
+              : gaveUp 
+                ? `You gave up with ${foundWords.length} of ${totalWords} words found.`
+                : `Time's up! You found ${foundWords.length} of ${totalWords} words.`}
+          </p>
+          {foundWords.length !== totalWords && (
+            <p className="text-sm text-amber-600 mt-1">
+              The missed words are displayed below with strikethrough.
+            </p>
+          )}
+        </div>
+      )}
       
       <motion.div 
         className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5"

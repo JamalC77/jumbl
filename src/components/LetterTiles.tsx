@@ -84,7 +84,7 @@ const LetterTiles: React.FC = () => {
       
       <div className="flex justify-between w-full items-center mb-2">
         <div className="text-sm font-medium bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full">
-          Hints: {hintsRemaining}/2
+          Hints: {hintsRemaining}/5
         </div>
         {activeHintLetters.length > 0 && (
           <div className="text-sm text-indigo-700">
