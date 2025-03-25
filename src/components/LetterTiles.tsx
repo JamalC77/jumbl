@@ -12,7 +12,8 @@ const LetterTiles: React.FC = () => {
     hintsRemaining,
     activeHintLetters,
     useHint,
-    clearHints
+    clearHints,
+    unusedLetters
   } = useGame();
   
   const [showNoHintsPopup, setShowNoHintsPopup] = useState(false);
@@ -100,20 +101,26 @@ const LetterTiles: React.FC = () => {
         {letters.split('').map((letter, index) => {
           const color = colors[index % colors.length];
           const isActiveHint = activeHintLetters.includes(letter);
+          const isUnusedLetter = unusedLetters.includes(letter);
+          
+          // Apply different styling for unused letters
+          const letterStyle = isUnusedLetter 
+            ? 'bg-gray-200 text-gray-400 opacity-60' // Whited out style for unused letters
+            : `${color} text-white`;
           
           return (
             <motion.div
               key={`${letter}-${index}`}
               className={`w-14 h-14 md:w-16 md:h-16 flex items-center justify-center 
-                        ${color} text-white font-bold text-2xl md:text-3xl rounded-lg 
+                        ${letterStyle} font-bold text-2xl md:text-3xl rounded-lg 
                         shadow-lg cursor-pointer select-none
                         ${isActiveHint ? 'ring-4 ring-yellow-400 ring-offset-2' : ''}
                         ${gameActive && (hintsRemaining > 0 || isActiveHint) ? 'hover:ring-2 hover:ring-yellow-300 hover:ring-offset-1' : ''}`}
-              whileHover={{ scale: 1.15, rotate: [0, -3, 3, 0] }}
-              whileTap={{ scale: 0.9, backgroundColor: "#4338ca" }}
+              whileHover={{ scale: isUnusedLetter ? 1.05 : 1.15, rotate: isUnusedLetter ? 0 : [0, -3, 3, 0] }}
+              whileTap={{ scale: 0.9, backgroundColor: isUnusedLetter ? "#d1d5db" : "#4338ca" }}
               initial={{ opacity: 0, y: 30, rotate: -5 + Math.random() * 10 }}
               animate={{ 
-                opacity: 1, 
+                opacity: isUnusedLetter ? 0.6 : 1, 
                 y: 0,
                 rotate: 0,
                 transition: { 
@@ -124,7 +131,7 @@ const LetterTiles: React.FC = () => {
                 } 
               }}
               onClick={() => handleLetterClick(letter)}
-              drag
+              drag={!isUnusedLetter} // Only allow dragging for still-useful letters
               dragConstraints={{
                 top: -5,
                 left: -5,

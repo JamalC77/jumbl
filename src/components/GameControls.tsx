@@ -174,16 +174,27 @@ const GameControls: React.FC = () => {
         )}
         
         {gameActive && (
-          <motion.button
-            className="px-5 py-2 bg-red-500 text-white font-medium rounded-full shadow-md"
-            onClick={endGame}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          >
-            Give Up
-          </motion.button>
+          <>
+            <motion.button
+              className="px-5 py-2 bg-red-500 text-white font-medium rounded-full shadow-md"
+              onClick={endGame}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+            >
+              Give Up
+            </motion.button>
+            
+            <motion.div
+              className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700 text-center"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              <span className="font-medium">Hint:</span> The first letter of each word is shown to help you get started.
+            </motion.div>
+          </>
         )}
         
         {gameCompleted && (

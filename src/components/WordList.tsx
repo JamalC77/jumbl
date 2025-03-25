@@ -5,6 +5,34 @@ import { useGame } from '@/utils/gameContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { WordDifficulty } from '@/utils/openAiService';
 
+// Component for displaying first letter hint
+const FirstLetterHint: React.FC<{ letter: string }> = ({ letter }) => {
+  return (
+    <motion.div
+      className="relative"
+      whileHover={{ scale: 1.2 }}
+    >
+      <motion.span 
+        className="text-blue-600 font-bold"
+        initial={{ opacity: 0, scale: 0.5 }}
+        animate={{ 
+          opacity: 1, 
+          scale: 1,
+        }}
+        transition={{ 
+          duration: 0.5,
+          type: "spring",
+          stiffness: 300,
+          damping: 15
+        }}
+      >
+        {letter}
+      </motion.span>
+
+    </motion.div>
+  );
+};
+
 // Component for difficulty badge
 const DifficultyBadge: React.FC<{ difficulty: WordDifficulty }> = ({ difficulty }) => {
   let bgColor = '';
@@ -172,21 +200,17 @@ const WordList: React.FC = () => {
       );
     }
     
-    if (activeHintLetters.length === 0 || !wordContainsHintLetters(word)) {
-      // Display placeholders for each letter
-      return (
-        <div className="flex justify-center space-x-1">
-          {Array(wordLength).fill('?').map((_, index) => (
-            <span key={index} className="text-gray-400">?</span>
-          ))}
-        </div>
-      );
-    }
-    
     // Create spacing between letters for better readability
     return (
       <div className="flex justify-center space-x-1">
         {word.split('').map((letter, index) => {
+          // Always show the first letter as a hint
+          if (index === 0) {
+            return (
+              <FirstLetterHint key={index} letter={letter} />
+            );
+          }
+          
           // Check if this exact position is a hint
           if (isHintPosition(letter, index)) {
             return (

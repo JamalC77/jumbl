@@ -36,6 +36,7 @@ interface GameContextType {
   startGameWithSeed: (seed: string, duration?: number) => Promise<boolean>;
   isChallenge: boolean;
   challengeStartTime: number | null;
+  unusedLetters: string[];
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -55,6 +56,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [gameDifficulty, setGameDifficulty] = useState<string>("normal");
   const [isChallenge, setIsChallenge] = useState<boolean>(false);
   const [challengeStartTime, setChallengeStartTime] = useState<number | null>(null);
+  const [unusedLetters, setUnusedLetters] = useState<string[]>([]);
 
   // Effect to reset to JUMBL when game is not active
   useEffect(() => {
@@ -287,9 +289,43 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     cleanUrlParams();
   };
 
-  // Add a found word if it's valid
+  // Helper function to identify letters that are no longer needed for remaining words
+  const updateUnusedLetters = () => {
+    if (!currentWordSet || !gameActive) {
+      setUnusedLetters([]);
+      return;
+    }
+
+    // Get all unfound words
+    const unfoundWords = currentWordSet.words.filter(word => !foundWords.includes(word));
+    
+    // If all words are found, there are no unused letters
+    if (unfoundWords.length === 0) {
+      setUnusedLetters([]);
+      return;
+    }
+
+    // Count letter usage in all unfound words
+    const letterUsage: Record<string, number> = {};
+    unfoundWords.forEach(word => {
+      word.split('').forEach(letter => {
+        letterUsage[letter] = (letterUsage[letter] || 0) + 1;
+      });
+    });
+
+    // Find letters in the game that aren't used in any remaining words
+    const unused = letters.split('').filter(letter => !letterUsage[letter]);
+    setUnusedLetters(unused);
+  };
+
+  // Call updateUnusedLetters when foundWords or letters change
+  useEffect(() => {
+    updateUnusedLetters();
+  }, [foundWords, letters, gameActive]);
+
+  // Add found word if it's valid
   const addFoundWord = (word: string): boolean => {
-    if (!currentWordSet) return false;
+    if (!gameActive || !currentWordSet) return false;
     
     const normalizedWord = word.toUpperCase();
     
@@ -305,12 +341,16 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     // Check if the word is in the current word set
     if (currentWordSet.words.includes(normalizedWord)) {
-      setFoundWords((prev) => [...prev, normalizedWord]);
+      const updatedWords = [...foundWords, normalizedWord];
+      setFoundWords(updatedWords);
       
       // Check if all words are found
-      if (foundWords.length + 1 === currentWordSet.words.length) {
+      if (updatedWords.length === currentWordSet.words.length) {
         endGame();
       }
+      
+      // Update unused letters after finding a word
+      updateUnusedLetters();
       
       return true;
     }
@@ -390,7 +430,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         totalWords: currentWordSet?.words.length || 0,
         gameActive,
         gameCompleted,
-        wordLength: currentWordSet?.wordLength || letters.length,
+        wordLength: currentWordSet?.wordLength || 5,
         currentWordSet,
         addFoundWord,
         startGame,
@@ -411,6 +451,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         startGameWithSeed,
         isChallenge,
         challengeStartTime,
+        unusedLetters,
       }}
     >
       {children}
