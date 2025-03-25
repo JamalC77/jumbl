@@ -63,32 +63,19 @@ const GameContent = () => {
       <div className="bg-white p-6 rounded-xl shadow-lg">
         <h2 className="text-xl font-bold text-indigo-600 mb-4">How to Play</h2>
         <ul className="list-disc pl-5 space-y-2 text-gray-700">
-          <li>Each puzzle has exactly 10 words to find</li>
-          <li>All words have the same length in each puzzle</li>
-          <li>You have 5 minutes to find all words</li>
-          <li>Type a word and press Enter or click Submit</li>
-          <li>Words must be formed using the letters shown</li>
-          <li>You can use the Shuffle button to rearrange letters</li>
-          <li>Find all words before time runs out to win!</li>
-          <li>Click on a letter tile to use a hint (2 hints per game)</li>
-          <li>Hints highlight words containing that letter</li>
-          <li>Choose difficulty level before starting a new game</li>
+          <li>Find 10 words of equal length within 5 minutes</li>
+          <li>Type words using only the letters provided</li>
+          <li>Press Enter or click Submit to check your word</li>
+          <li>Use Shuffle to rearrange letters</li>
+          <li>Click a letter tile to use a hint (5 per game)</li>
         </ul>
         <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
-          <h3 className="text-lg font-semibold text-blue-700 mb-2">Tips</h3>
-          <p className="text-blue-600 text-sm">Look for common prefixes and suffixes. Try different combinations of the first and last letters to discover more words!</p>
-        </div>
-        <div className="mt-4 p-4 bg-yellow-50 rounded-lg border border-yellow-100">
-          <h3 className="text-lg font-semibold text-yellow-700 mb-2">Hint System</h3>
-          <p className="text-yellow-600 text-sm">Use your hints wisely! Each game you get 5 hints. Click on a letter tile to see which words use that letter.</p>
-        </div>
-        <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-100">
-          <h3 className="text-lg font-semibold text-green-700 mb-2">Challenge Friends</h3>
-          <p className="text-green-600 text-sm">After a game, share your exact puzzle with friends by using the &ldquo;Share Results&rdquo; button. They&apos;ll play the same words!</p>
+          <h3 className="text-lg font-semibold text-blue-700">Tips</h3>
+          <p className="text-blue-600 text-sm">Look for common prefixes and suffixes. Try different letter combinations to discover more words.</p>
         </div>
         <div className="mt-4 p-4 bg-purple-50 rounded-lg border border-purple-100">
-          <h3 className="text-lg font-semibold text-purple-700 mb-2">Challenge Mode</h3>
-          <p className="text-purple-600 text-sm">Use the Challenge Mode feature to generate a link for you and friends to play the same puzzle. Compare scores to see who found the most words!</p>
+          <h3 className="text-lg font-semibold text-purple-700">Challenge Mode</h3>
+          <p className="text-purple-600 text-sm">Generate a shared puzzle link for friends to play the same words. Compare scores to see who found the most words!</p>
         </div>
       </div>
     </div>
