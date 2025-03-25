@@ -1,13 +1,74 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useGame } from '@/utils/gameContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
+// Virtual keyboard component in QWERTY layout
+const VirtualKeyboard: React.FC<{ 
+  letters: string; 
+  onLetterClick: (letter: string) => void;
+  gameActive: boolean;
+}> = ({ letters, onLetterClick, gameActive }) => {
+  // Standard QWERTY layout
+  const qwertyLayout = [
+    ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
+    ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
+    ['Z', 'X', 'C', 'V', 'B', 'N', 'M']
+  ];
+
+  // Filter the keyboard to only show letters that are in the game
+  const filteredLayout = qwertyLayout.map(row => 
+    row.filter(key => letters.includes(key))
+  ).filter(row => row.length > 0);
+
+  // Add backspace and enter keys
+  if (filteredLayout.length > 0) {
+    filteredLayout[filteredLayout.length - 1].push('⌫');
+  }
+
+  return (
+    <div className="md:hidden mt-4 w-full">
+      {filteredLayout.map((row, rowIndex) => (
+        <div key={`row-${rowIndex}`} className="flex justify-center gap-1 mb-2">
+          {row.map((key) => (
+            <motion.button
+              key={key}
+              className={`w-10 h-12 flex items-center justify-center 
+                        bg-indigo-600 text-white font-bold rounded-lg 
+                        shadow-md ${!gameActive ? 'opacity-50' : ''}`}
+              whileTap={{ scale: 0.95 }}
+              disabled={!gameActive}
+              onClick={() => onLetterClick(key)}
+            >
+              {key}
+            </motion.button>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+};
+
 const WordInput: React.FC = () => {
-  const { addFoundWord, gameActive, wordLength } = useGame();
+  const { addFoundWord, gameActive, wordLength, letters } = useGame();
   const [inputValue, setInputValue] = useState('');
   const [feedback, setFeedback] = useState<{ message: string; isSuccess: boolean; isWarning?: boolean } | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Check if we're on mobile on component mount
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkIfMobile();
+    window.addEventListener('resize', checkIfMobile);
+    
+    return () => {
+      window.removeEventListener('resize', checkIfMobile);
+    };
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,6 +101,20 @@ const WordInput: React.FC = () => {
     
     setInputValue('');
     setTimeout(() => setFeedback(null), 2000);
+  };
+
+  const handleVirtualKeyPress = (key: string) => {
+    if (!gameActive) return;
+    
+    if (key === '⌫') {
+      // Handle backspace
+      setInputValue(prev => prev.slice(0, -1));
+    } else {
+      // Add letter if we haven't reached max length
+      if (inputValue.length < wordLength) {
+        setInputValue(prev => prev + key);
+      }
+    }
   };
 
   return (
@@ -102,6 +177,15 @@ const WordInput: React.FC = () => {
         >
           Submit
         </motion.button>
+        
+        {/* Virtual keyboard for mobile */}
+        {gameActive && isMobile && (
+          <VirtualKeyboard 
+            letters={letters} 
+            onLetterClick={handleVirtualKeyPress}
+            gameActive={gameActive}
+          />
+        )}
       </form>
     </div>
   );

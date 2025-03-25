@@ -35,36 +35,43 @@ const FirstLetterHint: React.FC<{ letter: string }> = ({ letter }) => {
 
 // Component for difficulty badge
 const DifficultyBadge: React.FC<{ difficulty: WordDifficulty }> = ({ difficulty }) => {
-  let bgColor = '';
-  let textColor = '';
-  let label = '';
+  // Map difficulty to human-readable descriptions
+  const difficultyLabels = {
+    easy: "Common",
+    medium: "Uncommon",
+    hard: "Rare"
+  };
   
-  switch (difficulty) {
-    case 'easy':
-      bgColor = 'bg-green-100';
-      textColor = 'text-green-800';
-      label = 'Easy';
-      break;
-    case 'medium':
-      bgColor = 'bg-yellow-100';
-      textColor = 'text-yellow-800';
-      label = 'Medium';
-      break;
-    case 'hard':
-      bgColor = 'bg-red-100';
-      textColor = 'text-red-800';
-      label = 'Hard';
-      break;
-    default:
-      bgColor = 'bg-gray-100';
-      textColor = 'text-gray-800';
-      label = 'Unknown';
-  }
+  // Map difficulty to different color schemes
+  const difficultyColors = {
+    easy: "bg-green-100 text-green-800 border-green-300",
+    medium: "bg-amber-100 text-amber-800 border-amber-300",
+    hard: "bg-red-100 text-red-800 border-red-300"
+  };
+  
+  // Map difficulty to indicators for visual clarity
+  const difficultyIndicators = {
+    easy: "●",
+    medium: "●●",
+    hard: "●●●"
+  };
+  
+  // Add tooltips based on difficulty
+  const difficultyTooltips = {
+    easy: "A frequently used English word",
+    medium: "A less common but recognizable word",
+    hard: "A rare or specialized word"
+  };
   
   return (
-    <span className={`text-xs px-2 py-1 rounded-full ${bgColor} ${textColor} font-semibold mt-1 inline-block`}>
-      {label}
-    </span>
+    <div 
+      className={`text-xs px-2 py-0.5 rounded-full border ${difficultyColors[difficulty]} 
+                 flex items-center gap-1 transition-all hover:shadow-md`}
+      title={difficultyTooltips[difficulty]} // Add tooltip on hover
+    >
+      <span className="font-medium">{difficultyLabels[difficulty]}</span>
+      <span className="text-xs opacity-80">{difficultyIndicators[difficulty]}</span>
+    </div>
   );
 };
 

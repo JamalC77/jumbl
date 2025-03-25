@@ -32,11 +32,11 @@ const GameContent = () => {
             </div>
             
             <div className="border-t border-gray-200 pt-6">
-              <WordInput />
+              <WordList />
             </div>
             
             <div className="border-t border-gray-200 pt-6">
-              <WordList />
+              <WordInput />
             </div>
             
             <div className="border-t border-gray-200 pt-6">
