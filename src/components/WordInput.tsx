@@ -64,7 +64,7 @@ const WordInput: React.FC = () => {
             placeholder={gameActive ? `Enter a ${wordLength}-letter word...` : "Start game to play"}
             className="w-full px-4 py-3 text-xl rounded-lg border-2 border-indigo-300 
                      focus:border-indigo-500 focus:outline-none disabled:bg-gray-100
-                     disabled:text-gray-400 text-gray-800 font-medium transition-all"
+                     disabled:text-gray-400 text-indigo-800 font-medium transition-all bg-white"
             autoComplete="off"
             autoCorrect="off"
             spellCheck="false"
