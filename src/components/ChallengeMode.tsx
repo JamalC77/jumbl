@@ -12,6 +12,7 @@ const ChallengeMode: React.FC = () => {
   const [challengeTime, setChallengeTime] = useState<number>(5); // 5 minutes (in minutes)
   const [seedInput, setSeedInput] = useState<string>("");
   const [seedError, setSeedError] = useState<string>("");
+  const [isExpanded, setIsExpanded] = useState<boolean>(false);
 
   // Generate a new challenge seed
   const generateChallenge = () => {
@@ -83,125 +84,135 @@ const ChallengeMode: React.FC = () => {
       .catch(console.error);
   };
 
-  // Common input class for consistent styling
-  const inputClass = "w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium text-indigo-800 bg-white";
-
   return (
     <div className="w-full bg-white rounded-xl p-6 shadow-md border border-indigo-100">
-      <h2 className="text-2xl font-bold text-indigo-700 mb-4">Challenge Mode</h2>
+      <button 
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full flex justify-between items-center text-xl font-bold text-indigo-600 mb-2"
+      >
+        <span>Challenge Mode</span>
+        <span>{isExpanded ? '▲' : '▼'}</span>
+      </button>
 
-      {!seedGenerated ? (
-        <div className="space-y-6">
-          <p className="text-gray-700">
-            Create a challenge link that you and friends can use to play the exact same game. 
-            Perfect for comparing your skills on the same puzzle!
-          </p>
+      {isExpanded && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          exit={{ opacity: 0, height: 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          {!seedGenerated ? (
+            <div className="space-y-6">
+              <p className="text-gray-700">
+                Create a challenge link that you and friends can use to play the exact same game. 
+                Perfect for comparing your skills on the same puzzle!
+              </p>
 
-          <div className="space-y-3">
-            <label className="block text-sm font-medium text-gray-700">
-              Game duration (minutes):
-            </label>
-            <input
-              type="number"
-              value={challengeTime}
-              onChange={(e) => setChallengeTime(Math.max(1, Math.min(60, parseInt(e.target.value) || 5)))}
-              className={inputClass}
-              min="1"
-              max="60"
-            />
-          </div>
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700">
+                  Game duration (minutes):
+                </label>
+                <input
+                  type="number"
+                  value={challengeTime}
+                  onChange={(e) => setChallengeTime(Math.max(1, Math.min(60, parseInt(e.target.value) || 5)))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium text-indigo-800 bg-white"
+                  min="1"
+                  max="60"
+                />
+              </div>
 
-          <motion.button
-            className="w-full py-3 bg-indigo-600 text-white font-medium rounded-md shadow-md"
-            onClick={generateChallenge}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            disabled={isLoading}
-          >
-            {isLoading ? "Loading..." : "Generate Challenge Link"}
-          </motion.button>
-
-          <div className="border-t border-gray-200 pt-6 mt-6">
-            <h3 className="text-lg font-semibold text-indigo-600 mb-2">Accept a Challenge</h3>
-            <div className="space-y-3">
-              <input
-                type="text"
-                value={seedInput}
-                onChange={(e) => setSeedInput(e.target.value)}
-                className={inputClass}
-                placeholder="Paste challenge link or seed here..."
-              />
-              {seedError && (
-                <p className="text-red-500 text-sm">{seedError}</p>
-              )}
               <motion.button
-                className="w-full py-2 bg-green-600 text-white font-medium rounded-md shadow-md"
-                onClick={acceptChallenge}
+                className="w-full py-3 bg-indigo-600 text-white font-medium rounded-md shadow-md"
+                onClick={generateChallenge}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 disabled={isLoading}
               >
-                {isLoading ? "Loading..." : "Accept Challenge"}
+                {isLoading ? "Loading..." : "Generate Challenge Link"}
               </motion.button>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <h3 className="text-lg font-semibold text-green-700 mb-2">Challenge Ready!</h3>
-            <p className="text-green-600 mb-3">
-              Share this link with your friends. You'll all play the exact same puzzle!
-            </p>
-            <div className="flex items-center">
-              <input
-                type="text"
-                readOnly
-                value={challengeLink}
-                className="flex-1 px-4 py-2 bg-white border border-green-300 rounded-l-md focus:outline-none font-medium text-green-800"
-              />
-              <button
-                onClick={copyLink}
-                className="px-4 py-2 bg-green-600 text-white font-medium rounded-r-md hover:bg-green-700"
-              >
-                Copy
-              </button>
-            </div>
-          </div>
 
-          <div className="space-y-3">
-            <p className="text-gray-700 font-medium">Instructions:</p>
-            <ol className="list-decimal list-inside space-y-2 text-gray-600">
-              <li>Send the challenge link to your friends</li>
-              <li>Everyone can play at their own convenience</li>
-              <li>The game will have exactly the same words to find</li>
-              <li>Compare your scores to see who found the most words!</li>
-            </ol>
-          </div>
+              <h3 className="text-lg font-semibold text-indigo-600 mb-2">Accept a Challenge</h3>
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  value={seedInput}
+                  onChange={(e) => setSeedInput(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium text-indigo-800 bg-white"
+                  placeholder="Paste challenge link or seed here..."
+                />
+                {seedError && (
+                  <p className="text-red-500 text-sm">{seedError}</p>
+                )}
+                <motion.button
+                  className="w-full py-2 bg-green-600 text-white font-medium rounded-md shadow-md"
+                  onClick={acceptChallenge}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Loading..." : "Accept Challenge"}
+                </motion.button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-green-700 mb-2">Challenge Ready!</h3>
+                <p className="text-green-600 mb-3">
+                  Share this link with your friends. You'll all play the exact same puzzle!
+                </p>
+                <div className="flex items-center">
+                  <input
+                    type="text"
+                    readOnly
+                    value={challengeLink}
+                    className="flex-1 px-4 py-2 bg-white border border-green-300 rounded-l-md focus:outline-none font-medium text-green-800"
+                  />
+                  <button
+                    onClick={copyLink}
+                    className="px-4 py-2 bg-green-600 text-white font-medium rounded-r-md hover:bg-green-700"
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
 
-          <div className="flex space-x-3">
-            <motion.button
-              className="flex-1 py-2 bg-blue-600 text-white font-medium rounded-md shadow-md"
-              onClick={() => window.open(challengeLink, '_blank')}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              Start Challenge
-            </motion.button>
-            <motion.button
-              className="flex-1 py-2 bg-gray-500 text-white font-medium rounded-md shadow-md"
-              onClick={() => {
-                setSeedGenerated(false);
-                setChallengeSeed("");
-                setChallengeLink("");
-              }}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              Back
-            </motion.button>
-          </div>
-        </div>
+              <div className="space-y-3">
+                <p className="text-gray-700 font-medium">Instructions:</p>
+                <ol className="list-decimal list-inside space-y-2 text-gray-600">
+                  <li>Send the challenge link to your friends</li>
+                  <li>Everyone can play at their own convenience</li>
+                  <li>The game will have exactly the same words to find</li>
+                  <li>Compare your scores to see who found the most words!</li>
+                </ol>
+              </div>
+
+              <div className="flex flex-col space-y-2">
+                <motion.button
+                  className="py-2 bg-blue-600 text-white font-medium rounded-md shadow-md"
+                  onClick={() => window.open(challengeLink, '_blank')}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  Start Challenge
+                </motion.button>
+                <motion.button
+                  className="py-2 bg-gray-500 text-white font-medium rounded-md shadow-md"
+                  onClick={() => {
+                    setSeedGenerated(false);
+                    setChallengeSeed("");
+                    setChallengeLink("");
+                  }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  Back
+                </motion.button>
+              </div>
+            </div>
+          )}
+        </motion.div>
       )}
     </div>
   );
