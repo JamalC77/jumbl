@@ -250,15 +250,15 @@ const WordList: React.FC = () => {
   
   return (
     <div className="w-full">
-      <div className="flex justify-between items-center mb-3">
-        <h3 className="text-lg font-bold text-indigo-700">Words to Find</h3>
-        <div className="text-sm font-medium bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full">
+      <div className="flex justify-between items-center mb-2">
+        <h3 className="text-base font-bold text-indigo-700">Words Found</h3>
+        <div className="text-xs font-medium bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full">
           {foundWords.length} / {totalWords}
         </div>
       </div>
       
       {gameCompleted && !gameActive && (
-        <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg text-center">
+        <div className="mb-2 p-2 bg-amber-50 border border-amber-200 rounded-lg text-center text-sm">
           <p className="text-amber-700 font-medium">
             {foundWords.length === totalWords 
               ? "Congratulations, you found all the words!" 
@@ -267,7 +267,7 @@ const WordList: React.FC = () => {
                 : `Time's up! You found ${foundWords.length} of ${totalWords} words.`}
           </p>
           {foundWords.length !== totalWords && (
-            <p className="text-sm text-amber-600 mt-1">
+            <p className="text-xs text-amber-600 mt-1">
               The missed words are displayed below with strikethrough.
             </p>
           )}
@@ -275,7 +275,7 @@ const WordList: React.FC = () => {
       )}
       
       <motion.div 
-        className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5"
+        className="grid grid-cols-4 gap-1.5 sm:grid-cols-4 md:grid-cols-4"
         variants={container}
         initial="hidden"
         animate="visible"
@@ -290,14 +290,14 @@ const WordList: React.FC = () => {
               <motion.div
                 key={word}
                 variants={item}
-                className={`border rounded-lg p-3 text-center 
+                className={`border rounded-lg p-1.5 text-center 
                           font-medium shadow-sm ${getWordColor(index, isFound, containsHint)}
-                          ${containsHint && activeHintLetters.length > 0 ? 'ring-2 ring-yellow-400' : ''}`}
+                          ${containsHint && activeHintLetters.length > 0 ? 'ring-1 ring-yellow-400' : ''}`}
                 layout
-                whileHover={{ scale: 1.03 }}
+                whileHover={{ scale: 1.02 }}
               >
                 <div className="flex flex-col items-center">
-                  <span className="text-lg mb-1">
+                  <span className="text-sm mb-1">
                     {isFound ? highlightHintLetters(word) : displayUnfoundWord(word)}
                   </span>
                   <DifficultyBadge difficulty={difficulty || "medium"} />
@@ -307,19 +307,19 @@ const WordList: React.FC = () => {
           })}
           
           {/* If we don't have all words loaded yet, show placeholders */}
-          {allWords.length === 0 && Array(10).fill(null).map((_, index) => (
+          {allWords.length === 0 && Array(8).fill(null).map((_, index) => (
             <motion.div
               key={`placeholder-${index}`}
-              className="border border-dashed border-gray-300 rounded-lg p-3 text-center 
+              className="border border-dashed border-gray-300 rounded-lg p-1.5 text-center 
                       text-gray-400 italic"
               initial={{ opacity: 0.3 }}
               animate={{ opacity: 0.7 }}
               transition={{ repeat: Infinity, repeatType: "reverse", duration: 1.5 }}
             >
               <div className="flex flex-col items-center">
-                <span className="text-lg mb-1">?</span>
-                <div className="text-xs px-2 py-1 opacity-30 rounded-full bg-gray-200 inline-block">
-                  Loading...
+                <span className="text-sm mb-1">?</span>
+                <div className="text-xs px-2 py-0.5 opacity-30 rounded-full bg-gray-200 inline-block">
+                  ...
                 </div>
               </div>
             </motion.div>

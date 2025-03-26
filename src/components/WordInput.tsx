@@ -42,16 +42,16 @@ const VirtualKeyboard: React.FC<{
   };
 
   return (
-    <div className="md:hidden mt-4 w-full">
+    <div className="w-full">
       {filteredLayout.map((row, rowIndex) => (
-        <div key={`row-${rowIndex}`} className="flex justify-center gap-1 mb-2">
+        <div key={`row-${rowIndex}`} className="flex justify-center gap-1 mb-1">
           {row.map((key) => (
             <motion.button
               key={key}
-              className={`w-10 h-12 flex items-center justify-center 
+              className={`w-8 h-10 md:w-10 md:h-12 flex items-center justify-center 
                         ${activeKey === key ? 'bg-indigo-800' : 'bg-indigo-600'} 
                         text-white font-bold rounded-lg 
-                        shadow-md ${(!gameActive || isValidating) ? 'opacity-50' : ''}`}
+                        shadow-sm ${(!gameActive || isValidating) ? 'opacity-50' : ''}`}
               whileTap={{ scale: 0.95 }}
               disabled={!gameActive || isValidating}
               onClick={() => handleKeyPress(key)}
@@ -166,14 +166,14 @@ const WordInput: React.FC = () => {
     <div className="w-full max-w-md mx-auto">
       <form 
         onSubmit={handleSubmit} 
-        className="flex flex-col gap-2"
+        className="flex flex-col gap-1"
       >
         <div className="flex justify-between items-center mb-1">
-          <label htmlFor="wordInput" className="text-sm font-medium text-indigo-700">
+          <label htmlFor="wordInput" className="text-xs font-medium text-indigo-700">
             Enter a {wordLength}-letter word:
           </label>
-          <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full font-medium">
-            {wordLength} letters required
+          <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-medium">
+            {wordLength} letters
           </span>
         </div>
         
@@ -187,8 +187,8 @@ const WordInput: React.FC = () => {
               setInputValue(e.target.value.toUpperCase());
             }}
             disabled={!gameActive || isValidating}
-            placeholder={gameActive ? `Enter a ${wordLength}-letter word...` : "Start game to play"}
-            className="w-full px-4 py-3 text-xl rounded-lg border-2 border-indigo-300 
+            placeholder={gameActive ? `${wordLength}-letter word...` : "Start game to play"}
+            className="w-full px-3 py-2 text-base rounded-lg border-2 border-indigo-300 
                      focus:border-indigo-500 focus:outline-none disabled:bg-gray-100
                      disabled:text-gray-400 text-indigo-800 font-medium transition-all bg-white"
             autoComplete="off"
@@ -203,7 +203,7 @@ const WordInput: React.FC = () => {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                className={`absolute left-0 right-0 -top-10 p-2 text-center text-sm rounded-lg shadow-md ${
+                className={`absolute left-0 right-0 -top-8 p-1 text-center text-xs rounded-lg shadow-md ${
                   feedback.isSuccess 
                     ? 'bg-green-100 text-green-700 border border-green-200' 
                     : feedback.isWarning
@@ -220,7 +220,7 @@ const WordInput: React.FC = () => {
         <motion.button
           type="submit"
           disabled={!gameActive || isValidating}
-          className="bg-indigo-600 text-white py-2 px-6 rounded-lg font-medium
+          className="bg-indigo-600 text-white py-1.5 px-4 rounded-lg text-sm font-medium
                    disabled:bg-gray-300 disabled:cursor-not-allowed
                    hover:bg-indigo-700 transition-colors"
           whileHover={gameActive ? { scale: 1.02 } : {}}
@@ -229,14 +229,16 @@ const WordInput: React.FC = () => {
           {isValidating ? "Checking..." : inputValue.length === wordLength ? "Submit" : `Enter ${wordLength} Letters`}
         </motion.button>
         
-        {/* Virtual keyboard for mobile */}
-        {gameActive && isMobile && (
-          <VirtualKeyboard 
-            letters={letters} 
-            onLetterClick={handleVirtualKeyPress}
-            gameActive={gameActive}
-            isValidating={isValidating}
-          />
+        {/* Virtual keyboard for all screen sizes */}
+        {gameActive && (
+          <div className="mt-3">
+            <VirtualKeyboard 
+              letters={letters} 
+              onLetterClick={handleVirtualKeyPress}
+              gameActive={gameActive}
+              isValidating={isValidating}
+            />
+          </div>
         )}
       </form>
     </div>

@@ -97,7 +97,7 @@ const LetterTiles: React.FC = () => {
         )}
       </div>
       
-      <div className="flex flex-wrap justify-center gap-2 md:gap-3">
+      <div className="flex flex-wrap justify-center gap-2">
         {letters.split('').map((letter, index) => {
           const color = colors[index % colors.length];
           const isActiveHint = activeHintLetters.includes(letter);
@@ -111,20 +111,20 @@ const LetterTiles: React.FC = () => {
           return (
             <motion.div
               key={`${letter}-${index}`}
-              className={`w-14 h-14 md:w-16 md:h-16 flex items-center justify-center 
-                        ${letterStyle} font-bold text-2xl md:text-3xl rounded-lg 
-                        shadow-lg cursor-pointer select-none
-                        ${isActiveHint ? 'ring-4 ring-yellow-400 ring-offset-2' : ''}
+              className={`w-12 h-12 md:w-14 md:h-14 flex items-center justify-center 
+                        ${letterStyle} font-bold text-lg md:text-2xl rounded-lg 
+                        shadow-md cursor-pointer select-none
+                        ${isActiveHint ? 'ring-2 ring-yellow-400 ring-offset-1' : ''}
                         ${gameActive && (hintsRemaining > 0 || isActiveHint) ? 'hover:ring-2 hover:ring-yellow-300 hover:ring-offset-1' : ''}`}
-              whileHover={{ scale: isUnusedLetter ? 1.05 : 1.15, rotate: isUnusedLetter ? 0 : [0, -3, 3, 0] }}
-              whileTap={{ scale: 0.9, backgroundColor: isUnusedLetter ? "#d1d5db" : "#4338ca" }}
-              initial={{ opacity: 0, y: 30, rotate: -5 + Math.random() * 10 }}
+              whileHover={{ scale: isUnusedLetter ? 1.03 : 1.1, rotate: isUnusedLetter ? 0 : [0, -2, 2, 0] }}
+              whileTap={{ scale: 0.95, backgroundColor: isUnusedLetter ? "#d1d5db" : "#4338ca" }}
+              initial={{ opacity: 0, y: 20, rotate: -5 + Math.random() * 10 }}
               animate={{ 
                 opacity: isUnusedLetter ? 0.6 : 1, 
                 y: 0,
                 rotate: 0,
                 transition: { 
-                  delay: index * 0.05,
+                  delay: index * 0.03,
                   type: "spring",
                   stiffness: 300,
                   damping: 15
@@ -133,10 +133,10 @@ const LetterTiles: React.FC = () => {
               onClick={() => handleLetterClick(letter)}
               drag={!isUnusedLetter} // Only allow dragging for still-useful letters
               dragConstraints={{
-                top: -5,
-                left: -5,
-                right: 5,
-                bottom: 5,
+                top: -2,
+                left: -2,
+                right: 2,
+                bottom: 2,
               }}
             >
               {letter}
@@ -145,17 +145,17 @@ const LetterTiles: React.FC = () => {
         })}
       </div>
       
-      <div className="flex gap-3">
+      <div className="flex gap-2">
         <motion.button
-          className="px-5 py-2 bg-indigo-600 text-white font-medium rounded-full 
+          className="px-4 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded-full 
                      shadow-md hover:bg-indigo-700 transition-colors"
           onClick={shuffleLetters}
-          whileHover={{ scale: 1.05 }}
+          whileHover={{ scale: 1.03 }}
           whileTap={{ scale: 0.95 }}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          Shuffle Letters
+          Shuffle
         </motion.button>
         
         {/* {activeHintLetters.length > 0 && (

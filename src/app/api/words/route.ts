@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 
-// API route that reads words.txt and returns 10 random words
+// API route that reads words.txt and returns 8 random words
 export async function GET(request: Request) {
   try {
     // Get the URL to parse query parameters
@@ -175,8 +175,8 @@ export async function GET(request: Request) {
       }
     }
     
-    // Select 10 random words
-    const selectedWords = filteredWords.slice(0, 10).map(word => word.toUpperCase());
+    // Select 8 random words
+    const selectedWords = filteredWords.slice(0, 8).map(word => word.toUpperCase());
     
     // Return the selected words
     return NextResponse.json({ 

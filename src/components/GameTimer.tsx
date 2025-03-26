@@ -35,9 +35,9 @@ const GameTimer: React.FC = () => {
   const isPulsing = remainingTime <= 60;
   
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-end">
       <motion.div 
-        className={`text-3xl font-bold mb-3 font-mono ${gameActive ? getColorClass() : 'text-gray-500'}`}
+        className={`text-xl md:text-2xl font-bold mb-1 font-mono ${gameActive ? getColorClass() : 'text-gray-500'}`}
         animate={isPulsing && gameActive ? { scale: [1, 1.05, 1] } : {}}
         transition={{ repeat: Infinity, duration: 1 }}
       >
@@ -45,22 +45,22 @@ const GameTimer: React.FC = () => {
       </motion.div>
       
       {gameActive && (
-        <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+        <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
           <motion.div
             className={`h-full ${getProgressColor()}`}
             initial={{ width: `${timeProgress}%` }}
             animate={{ width: `${timeProgress}%` }}
             transition={{ duration: 0.5 }}
             style={{ 
-              boxShadow: isPulsing ? '0 0 8px rgba(239, 68, 68, 0.7)' : 'none' 
+              boxShadow: isPulsing ? '0 0 6px rgba(239, 68, 68, 0.7)' : 'none' 
             }}
           />
         </div>
       )}
 
       {!gameActive && !timeProgress && (
-        <div className="text-sm text-indigo-500 font-medium mt-1">
-          Press Start to begin!
+        <div className="text-xs text-indigo-500 font-medium">
+          Start to begin!
         </div>
       )}
     </div>

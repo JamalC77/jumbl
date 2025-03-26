@@ -68,27 +68,27 @@ const GameControls: React.FC = () => {
   
   return (
     <div className="w-full">
-      <div className="flex flex-col space-y-4">
+      <div className="flex flex-col space-y-3">
         {!gameActive && !gameCompleted && (
           <>
             <div className="flex justify-center">
               <motion.button
-                className="px-6 py-3 bg-indigo-600 text-white font-medium rounded-full shadow-md"
+                className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-full shadow-md"
                 onClick={() => startGame(customTime)}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 disabled={isLoading}
               >
                 {isLoading ? "Loading..." : "Start Game"}
               </motion.button>
             </div>
             
-            <div className="flex justify-center mt-4">
+            <div className="flex justify-center mt-2">
               <motion.button
-                className="px-4 py-2 bg-blue-500 text-white font-medium rounded-full shadow-md"
+                className="px-3 py-1.5 bg-blue-500 text-white text-sm font-medium rounded-full shadow-md"
                 onClick={() => setShowSeedInput(!showSeedInput)}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
                 {showSeedInput ? "Hide Seed Input" : "Play With Seed"}
               </motion.button>
@@ -96,14 +96,14 @@ const GameControls: React.FC = () => {
             
             {showSeedInput && (
               <motion.div 
-                className="p-4 bg-blue-50 rounded-lg border border-blue-200"
+                className="p-3 bg-blue-50 rounded-lg border border-blue-200"
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.2 }}
               >
                 <div className="flex flex-col space-y-2">
-                  <label htmlFor="seedInput" className="text-blue-700 font-medium">
+                  <label htmlFor="seedInput" className="text-blue-700 text-sm font-medium">
                     Enter Game Seed:
                   </label>
                   <input
@@ -111,61 +111,18 @@ const GameControls: React.FC = () => {
                     type="text"
                     value={seedInput}
                     onChange={(e) => setSeedInput(e.target.value)}
-                    className="w-full px-4 py-2 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-indigo-800 bg-white"
+                    className="w-full px-3 py-1.5 text-sm border border-blue-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium text-indigo-800 bg-white"
                     placeholder="Paste game seed here..."
                   />
                   {seedError && (
-                    <p className="text-red-500 text-sm">{seedError}</p>
+                    <p className="text-red-500 text-xs">{seedError}</p>
                   )}
                   <button
-                    className="w-full py-2 bg-blue-600 text-white font-medium rounded-md shadow-sm hover:bg-blue-700"
+                    className="w-full py-1.5 bg-blue-600 text-white text-sm font-medium rounded-md shadow-sm hover:bg-blue-700"
                     onClick={handlePlayWithSeed}
                     disabled={isLoading}
                   >
                     {isLoading ? "Loading..." : "Start Game With Seed"}
-                  </button>
-                </div>
-              </motion.div>
-            )}
-            
-            {/* <div className="flex justify-center mt-2">
-              <motion.button
-                className="px-4 py-2 bg-gray-500 text-white font-medium rounded-full shadow-md"
-                onClick={() => setShowCustomTimeInput(!showCustomTimeInput)}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                {showCustomTimeInput ? "Hide Custom Time" : "Custom Time"}
-              </motion.button>
-            </div> */}
-            
-            {showCustomTimeInput && (
-              <motion.div 
-                className="p-4 bg-gray-50 rounded-lg border border-gray-200"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <div className="flex flex-col space-y-2">
-                  <label htmlFor="timeInput" className="text-gray-700 font-medium">
-                    Game Duration (seconds):
-                  </label>
-                  <input
-                    id="timeInput"
-                    type="number"
-                    min="60"
-                    max="3600"
-                    value={customTime}
-                    onChange={(e) => setCustomTime(Math.max(60, Math.min(3600, parseInt(e.target.value) || 300)))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 font-medium text-indigo-800 bg-white"
-                  />
-                  <button
-                    className="w-full py-2 bg-gray-600 text-white font-medium rounded-md shadow-sm hover:bg-gray-700"
-                    onClick={() => startGame(customTime)}
-                    disabled={isLoading}
-                  >
-                    Start with Custom Time
                   </button>
                 </div>
               </motion.div>
@@ -176,10 +133,10 @@ const GameControls: React.FC = () => {
         {gameActive && (
           <>
             <motion.button
-              className="px-5 py-2 bg-red-500 text-white font-medium rounded-full shadow-md"
+              className="px-4 py-1.5 bg-red-500 text-white text-sm font-medium rounded-full shadow-md"
               onClick={endGame}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
@@ -187,44 +144,44 @@ const GameControls: React.FC = () => {
             </motion.button>
             
             <motion.div
-              className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700 text-center"
+              className="mt-1 p-1.5 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700 text-center"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
             >
-              <span className="font-medium">Hint:</span> The first letter of each word is shown to help you get started.
+              <span className="font-medium">Hint:</span> First letter of each word is shown to help.
             </motion.div>
           </>
         )}
         
         {gameCompleted && (
-          <div className="flex flex-col items-center gap-3">
+          <div className="flex flex-col items-center gap-2">
             <motion.div 
-              className="text-2xl font-bold text-center p-4 rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-700 w-full"
+              className="text-base font-bold text-center p-2 rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-700 w-full"
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring", stiffness: 300, damping: 20 }}
             >
               {currentScore === totalWords 
                 ? '🎉 Perfect Score! 🎉' 
-                : `You found ${currentScore} out of ${totalWords} words!`}
+                : `Found ${currentScore}/${totalWords} words!`}
             </motion.div>
             
-            <div className="flex gap-3 flex-wrap justify-center">
+            <div className="flex gap-2 flex-wrap justify-center">
               <motion.button
-                className="px-5 py-2 bg-indigo-500 text-white font-medium rounded-full shadow-md"
+                className="px-3 py-1.5 bg-indigo-500 text-white text-sm font-medium rounded-full shadow-md"
                 onClick={shareResults}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
                 Share Results
               </motion.button>
               
               <motion.button
-                className="px-5 py-2 bg-green-500 text-white font-medium rounded-full shadow-md"
+                className="px-3 py-1.5 bg-green-500 text-white text-sm font-medium rounded-full shadow-md"
                 onClick={resetGame}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
                 New Game
               </motion.button>

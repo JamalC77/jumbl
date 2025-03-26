@@ -54,18 +54,18 @@ const fetchRandomWords = async (difficulty?: string): Promise<{ words: string[],
     // Return a fallback set of words if the API fails
     return {
       words: [
-        "ABOUT", "ABOVE", "ABUSE", "ACTOR", "ADAPT", 
-        "ADMIT", "ADOPT", "ADULT", "AFTER", "AGAIN"
+        "ABOUT", "ABOVE", "ABUSE", "ACTOR", 
+        "ADAPT", "ADMIT", "ADOPT", "ADULT"
       ],
       difficulty: difficulty || 'normal'
     };
   }
 };
 
-// Generate a random word set by fetching 10 random words from our API
+// Generate a random word set by fetching 8 random words from our API
 export const getRandomWordSet = async (difficulty?: string): Promise<WordSet> => {
   try {
-    // Fetch 10 random words from our API with optional difficulty
+    // Fetch 8 random words from our API with optional difficulty
     const { words, difficulty: actualDifficulty } = await fetchRandomWords(difficulty);
     
     // Get all unique letters from these words
@@ -99,8 +99,8 @@ export const getRandomWordSet = async (difficulty?: string): Promise<WordSet> =>
     
     // Fallback: Use a predefined set of words
     const fallbackWords = [
-      "ABOUT", "ABOVE", "ABUSE", "ACTOR", "ADAPT", 
-      "ADMIT", "ADOPT", "ADULT", "AFTER", "AGAIN"
+      "ABOUT", "ABOVE", "ABUSE", "ACTOR", 
+      "ADAPT", "ADMIT", "ADOPT", "ADULT"
     ];
     
     const allLetters = getUniqueLetters(fallbackWords);
