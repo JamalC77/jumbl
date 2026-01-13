@@ -1,248 +1,180 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useGame } from '@/utils/gameContext';
 import { motion, AnimatePresence } from 'framer-motion';
-
-// Virtual keyboard component in QWERTY layout
-const VirtualKeyboard: React.FC<{ 
-  letters: string; 
-  onLetterClick: (letter: string) => void;
-  gameActive: boolean;
-  isValidating: boolean;
-}> = ({ letters, onLetterClick, gameActive, isValidating }) => {
-  // Standard QWERTY layout
-  const qwertyLayout = [
-    ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
-    ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
-    ['Z', 'X', 'C', 'V', 'B', 'N', 'M']
-  ];
-
-  const [activeKey, setActiveKey] = useState<string | null>(null);
-
-  // Filter the keyboard to only show letters that are in the game
-  const filteredLayout = qwertyLayout.map(row => 
-    row.filter(key => letters.includes(key))
-  ).filter(row => row.length > 0);
-
-  // Add backspace and enter keys
-  if (filteredLayout.length > 0) {
-    filteredLayout[filteredLayout.length - 1].push('⌫');
-  }
-
-  const handleKeyPress = (key: string) => {
-    if (!gameActive || isValidating) return;
-    
-    // Visual feedback
-    setActiveKey(key);
-    setTimeout(() => setActiveKey(null), 150);
-    
-    // Pass the click to parent
-    onLetterClick(key);
-  };
-
-  return (
-    <div className="w-full">
-      {filteredLayout.map((row, rowIndex) => (
-        <div key={`row-${rowIndex}`} className="flex justify-center gap-1 mb-1">
-          {row.map((key) => (
-            <motion.button
-              key={key}
-              className={`w-8 h-10 md:w-10 md:h-12 flex items-center justify-center 
-                        ${activeKey === key ? 'bg-indigo-800' : 'bg-indigo-600'} 
-                        text-white font-bold rounded-lg 
-                        shadow-sm ${(!gameActive || isValidating) ? 'opacity-50' : ''}`}
-              whileTap={{ scale: 0.95 }}
-              disabled={!gameActive || isValidating}
-              onClick={() => handleKeyPress(key)}
-              type="button" // Explicitly prevent form submission
-            >
-              {key}
-            </motion.button>
-          ))}
-        </div>
-      ))}
-    </div>
-  );
-};
+import { celebrateWordFound, celebrateWin } from '@/utils/confetti';
 
 const WordInput: React.FC = () => {
-  const { addFoundWord, gameActive, wordLength, letters } = useGame();
-  const [inputValue, setInputValue] = useState('');
-  const [feedback, setFeedback] = useState<{ message: string; isSuccess: boolean; isWarning?: boolean } | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
-  const [isValidating, setIsValidating] = useState(false);
-  const [wasSubmitted, setWasSubmitted] = useState(false);
+  const {
+    addFoundWord,
+    gameActive,
+    wordLength,
+    inputValue,
+    setInputValue,
+    removeLastLetter,
+    clearInput,
+    triggerCelebration,
+    foundWords,
+    totalWords,
+    gameCompleted,
+  } = useGame();
+
+  const [feedback, setFeedback] = React.useState<{ message: string; type: 'success' | 'error' | 'warning' } | null>(null);
+  const [isShaking, setIsShaking] = React.useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
-  // Check if we're on mobile on component mount
+
+  // Trigger confetti when a word is found
   useEffect(() => {
-    const checkIfMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    
-    checkIfMobile();
-    window.addEventListener('resize', checkIfMobile);
-    
-    return () => {
-      window.removeEventListener('resize', checkIfMobile);
-      // Clear any pending timeouts
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
+    if (triggerCelebration) {
+      celebrateWordFound();
+      setFeedback({ message: "Nice!", type: 'success' });
+
+      // Check if all words found (win condition)
+      if (foundWords.length + 1 === totalWords) {
+        setTimeout(() => celebrateWin(), 300);
       }
+
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => setFeedback(null), 1500);
+    }
+  }, [triggerCelebration, foundWords.length, totalWords]);
+
+  // Clean up timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
   }, []);
-  
-  // Effect to clear feedback when input changes
-  useEffect(() => {
-    if (!wasSubmitted && feedback) {
-      setFeedback(null);
-    }
-  }, [inputValue, wasSubmitted, feedback]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setWasSubmitted(true);
-    
+
     if (!gameActive) {
-      setFeedback({ message: "Game is not active! Press Start to play", isSuccess: false });
-      timeoutRef.current = setTimeout(() => {
-        setFeedback(null);
-        setWasSubmitted(false);
-      }, 2000);
+      setFeedback({ message: "Start the game first!", type: 'warning' });
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => setFeedback(null), 2000);
       return;
     }
-    
-    const word = inputValue.trim();
-    
+
+    const word = inputValue.trim().toUpperCase();
+
     if (word.length !== wordLength) {
-      setFeedback({ message: `Word must be exactly ${wordLength} letters!`, isSuccess: false });
-      timeoutRef.current = setTimeout(() => {
-        setFeedback(null);
-        setWasSubmitted(false);
-      }, 2000);
+      setFeedback({ message: `Need ${wordLength} letters`, type: 'warning' });
+      setIsShaking(true);
+      setTimeout(() => setIsShaking(false), 500);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => setFeedback(null), 2000);
       return;
     }
-    
-    setIsValidating(true);
+
     const success = addFoundWord(word);
-    
-    if (success) {
-      setFeedback({ message: "✨ Great job! Word found! ✨", isSuccess: true });
-    } else {
-      setFeedback({ 
-        message: "This word isn't in our list for this puzzle", 
-        isSuccess: false,
-        isWarning: true 
-      });
+
+    if (!success) {
+      setFeedback({ message: "Not in word list", type: 'error' });
+      setIsShaking(true);
+      setTimeout(() => setIsShaking(false), 500);
+      clearInput();
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => setFeedback(null), 2000);
     }
-    
-    setInputValue('');
-    setIsValidating(false);
-    timeoutRef.current = setTimeout(() => {
-      setFeedback(null);
-      setWasSubmitted(false);
-    }, 2000);
+    // Success feedback is handled by the triggerCelebration effect
   };
 
-  const handleVirtualKeyPress = (key: string) => {
-    if (!gameActive || isValidating) return;
-    
-    // Clear any existing validation state
-    setWasSubmitted(false);
-    
-    if (key === '⌫') {
-      // Handle backspace
-      setInputValue(prev => prev.slice(0, -1));
-    } else {
-      // Add letter if we haven't reached max length
-      if (inputValue.length < wordLength) {
-        setInputValue(prev => prev + key);
-      }
+  // Handle keyboard input
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace') {
+      e.preventDefault();
+      removeLastLetter();
+    } else if (e.key === 'Escape') {
+      clearInput();
     }
   };
 
   return (
     <div className="w-full max-w-md mx-auto">
-      <form 
-        onSubmit={handleSubmit} 
-        className="flex flex-col gap-1"
-      >
-        <div className="flex justify-between items-center mb-1">
-          <label htmlFor="wordInput" className="text-xs font-medium text-indigo-700">
-            Enter a {wordLength}-letter word:
-          </label>
-          <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-medium">
-            {wordLength} letters
-          </span>
-        </div>
-        
-        <div className="relative">
-          <input
-            id="wordInput"
-            type="text"
-            value={inputValue}
-            onChange={(e) => {
-              setWasSubmitted(false);
-              setInputValue(e.target.value.toUpperCase());
-            }}
-            disabled={!gameActive || isValidating}
-            placeholder={gameActive ? `${wordLength}-letter word...` : "Start game to play"}
-            className="w-full px-3 py-2 text-base rounded-lg border-2 border-indigo-300 
-                     focus:border-indigo-500 focus:outline-none disabled:bg-gray-100
-                     disabled:text-gray-400 text-indigo-800 font-medium transition-all bg-white"
-            autoComplete="off"
-            autoCorrect="off"
-            spellCheck="false"
-            maxLength={wordLength}
-          />
-          
-          <AnimatePresence>
-            {feedback && wasSubmitted && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className={`absolute left-0 right-0 -top-8 p-1 text-center text-xs rounded-lg shadow-md ${
-                  feedback.isSuccess 
-                    ? 'bg-green-100 text-green-700 border border-green-200' 
-                    : feedback.isWarning
-                      ? 'bg-amber-100 text-amber-700 border border-amber-200'
-                      : 'bg-red-100 text-red-700 border border-red-200'
-                }`}
-              >
-                {feedback.message}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-        
-        <motion.button
-          type="submit"
-          disabled={!gameActive || isValidating}
-          className="bg-indigo-600 text-white py-1.5 px-4 rounded-lg text-sm font-medium
-                   disabled:bg-gray-300 disabled:cursor-not-allowed
-                   hover:bg-indigo-700 transition-colors"
-          whileHover={gameActive ? { scale: 1.02 } : {}}
-          whileTap={gameActive ? { scale: 0.98 } : {}}
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+        {/* Feedback message */}
+        <AnimatePresence>
+          {feedback && (
+            <motion.div
+              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className={`text-center py-2 px-4 rounded-full font-semibold text-sm
+                ${feedback.type === 'success' ? 'bg-emerald-100 text-emerald-700' :
+                  feedback.type === 'error' ? 'bg-red-100 text-red-700' :
+                  'bg-amber-100 text-amber-700'}`}
+            >
+              {feedback.message}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Hidden input for keyboard capture */}
+        <input
+          type="text"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value.toUpperCase())}
+          onKeyDown={handleKeyDown}
+          className="sr-only"
+          autoComplete="off"
+          autoCorrect="off"
+          spellCheck="false"
+          disabled={!gameActive}
+        />
+
+        {/* Action buttons */}
+        <motion.div
+          className="flex gap-2 justify-center"
+          animate={isShaking ? { x: [-5, 5, -5, 5, 0] } : {}}
+          transition={{ duration: 0.4 }}
         >
-          {isValidating ? "Checking..." : inputValue.length === wordLength ? "Submit" : `Enter ${wordLength} Letters`}
-        </motion.button>
-        
-        {/* Virtual keyboard for all screen sizes */}
-        {gameActive && (
-          <div className="mt-3">
-            <VirtualKeyboard 
-              letters={letters} 
-              onLetterClick={handleVirtualKeyPress}
-              gameActive={gameActive}
-              isValidating={isValidating}
-            />
-          </div>
-        )}
+          {/* Backspace button */}
+          <motion.button
+            type="button"
+            onClick={removeLastLetter}
+            disabled={!gameActive || inputValue.length === 0}
+            className="px-4 py-2.5 bg-gray-200 text-gray-700 font-semibold rounded-xl
+                     disabled:opacity-40 disabled:cursor-not-allowed
+                     hover:bg-gray-300 transition-colors"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            Delete
+          </motion.button>
+
+          {/* Submit button */}
+          <motion.button
+            type="submit"
+            disabled={!gameActive || inputValue.length !== wordLength}
+            className={`px-8 py-2.5 font-bold rounded-xl transition-all
+              ${inputValue.length === wordLength && gameActive
+                ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg hover:shadow-xl'
+                : 'bg-gray-200 text-gray-500 cursor-not-allowed'}`}
+            whileHover={inputValue.length === wordLength && gameActive ? { scale: 1.05 } : {}}
+            whileTap={inputValue.length === wordLength && gameActive ? { scale: 0.95 } : {}}
+          >
+            {inputValue.length === wordLength ? 'Submit' : `${inputValue.length}/${wordLength}`}
+          </motion.button>
+
+          {/* Clear button */}
+          <motion.button
+            type="button"
+            onClick={clearInput}
+            disabled={!gameActive || inputValue.length === 0}
+            className="px-4 py-2.5 bg-gray-200 text-gray-700 font-semibold rounded-xl
+                     disabled:opacity-40 disabled:cursor-not-allowed
+                     hover:bg-gray-300 transition-colors"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            Clear
+          </motion.button>
+        </motion.div>
       </form>
     </div>
   );
 };
 
-export default WordInput; 
+export default WordInput;

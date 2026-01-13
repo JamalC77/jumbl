@@ -11,6 +11,7 @@ import GameSummary from '@/components/GameSummary';
 import ChallengeMode from '@/components/ChallengeMode';
 import { useGame } from '@/utils/gameContext';
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Wrapper component to access game context for conditional rendering
 const GameContent = () => {
@@ -18,77 +19,133 @@ const GameContent = () => {
   const [showRules, setShowRules] = useState(false);
 
   return (
-    <div className="w-full max-w-6xl mx-auto">
-      {/* Game Area */}
-      <div className="p-4 bg-white rounded-xl shadow-lg mb-4">
-        <div className="grid gap-4">
-          {/* More compact header section */}
-          <div className="flex flex-wrap justify-between items-center">
+    <div className="w-full max-w-2xl mx-auto">
+      {/* Main Game Card */}
+      <motion.div
+        className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-xl overflow-hidden"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
+        {/* Header with difficulty and timer */}
+        <div className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-indigo-100">
+          <div className="flex justify-between items-center">
             <DifficultySelector />
             <GameTimer />
           </div>
-          
-          <div className="border-t border-gray-200 pt-4">
-            <WordList />
-          </div>
-          
-          <div className="border-t border-gray-200 pt-4">
+        </div>
+
+        {/* Game content */}
+        <div className="p-6 space-y-8">
+          {/* Letter tiles - HERO section */}
+          <section>
             <LetterTiles />
-          </div>
-          
-          <div className="border-t border-gray-200 pt-4">
+          </section>
+
+          {/* Word input controls */}
+          <section>
             <WordInput />
-          </div>
-          
-          <div className="border-t border-gray-200 pt-4">
+          </section>
+
+          {/* Game controls (Start/Give Up/Share) */}
+          <section>
             <GameControls />
-          </div>
+          </section>
+
+          {/* Word list with progress */}
+          <section>
+            <WordList />
+          </section>
 
           {/* Challenge Mode - only show when no game is active */}
-          {!gameActive && !gameCompleted && !isChallenge && (
-            <div className="border-t border-gray-200 pt-4">
-              <ChallengeMode />
-            </div>
-          )}
+          <AnimatePresence>
+            {!gameActive && !gameCompleted && !isChallenge && (
+              <motion.section
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+              >
+                <ChallengeMode />
+              </motion.section>
+            )}
+          </AnimatePresence>
 
-          {gameCompleted && (
-            <div className="border-t border-gray-200 pt-4">
-              <GameSummary />
-            </div>
-          )}
+          {/* Game Summary - only show when game is completed */}
+          <AnimatePresence>
+            {gameCompleted && (
+              <motion.section
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+              >
+                <GameSummary />
+              </motion.section>
+            )}
+          </AnimatePresence>
         </div>
-      </div>
+      </motion.div>
 
-      {/* Rules Section - Collapsible on mobile */}
-      <div className="bg-white p-4 rounded-xl shadow-lg">
-        <button 
+      {/* How to Play - Collapsible */}
+      <motion.div
+        className="mt-4 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2 }}
+      >
+        <button
           onClick={() => setShowRules(!showRules)}
-          className="w-full flex justify-between items-center text-xl font-bold text-indigo-600 mb-2"
+          className="w-full p-4 flex justify-between items-center text-indigo-700 hover:bg-indigo-50 transition-colors"
         >
-          <span>How to Play</span>
-          <span>{showRules ? '▲' : '▼'}</span>
+          <span className="font-bold">How to Play</span>
+          <motion.span
+            animate={{ rotate: showRules ? 180 : 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            ▼
+          </motion.span>
         </button>
-        
-        {showRules && (
-          <>
-            <ul className="list-disc pl-5 space-y-1 text-gray-700 text-sm">
-              <li>Find 8 words of equal length within 5 minutes</li>
-              <li>Type words using only the letters provided</li>
-              <li>Press Enter or click Submit to check your word</li>
-              <li>Use Shuffle to rearrange letters</li>
-              <li>Click a letter tile to use a hint (5 per game)</li>
-            </ul>
-            <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
-              <h3 className="text-md font-semibold text-blue-700">Tips</h3>
-              <p className="text-blue-600 text-xs">Look for common prefixes and suffixes. Try different letter combinations to discover more words.</p>
-            </div>
-            <div className="mt-2 p-3 bg-purple-50 rounded-lg border border-purple-100">
-              <h3 className="text-md font-semibold text-purple-700">Challenge Mode</h3>
-              <p className="text-purple-600 text-xs">Generate a shared puzzle link for friends to play the same words. Compare scores to see who found the most words!</p>
-            </div>
-          </>
-        )}
-      </div>
+
+        <AnimatePresence>
+          {showRules && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="px-4 pb-4"
+            >
+              <ul className="space-y-2 text-gray-600 text-sm">
+                <li className="flex items-start gap-2">
+                  <span className="text-indigo-500 mt-0.5">●</span>
+                  <span>Find 8 words using the letters provided within 5 minutes</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-indigo-500 mt-0.5">●</span>
+                  <span>Click the letter tiles to build your word, then hit Submit</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-indigo-500 mt-0.5">●</span>
+                  <span>The first letter of each word is shown as a hint</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-indigo-500 mt-0.5">●</span>
+                  <span>Right-click a tile to use one of your 5 hints</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-indigo-500 mt-0.5">●</span>
+                  <span>Use Shuffle to rearrange letters for a fresh perspective</span>
+                </li>
+              </ul>
+
+              <div className="mt-4 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100">
+                <p className="text-purple-700 text-sm font-medium">
+                  Challenge friends by sharing your puzzle link after completing a game!
+                </p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
     </div>
   );
 };
@@ -96,20 +153,33 @@ const GameContent = () => {
 export default function Home() {
   return (
     <GameProvider>
-      <main className="flex min-h-screen flex-col items-center p-3 bg-gradient-to-br from-yellow-100 via-pink-100 to-blue-100">
-        <div className="z-10 w-full max-w-6xl items-center justify-between mb-4">
-          <h1 className="text-3xl font-extrabold text-center w-full mb-2 text-indigo-600 tracking-tight">
+      <main className="min-h-screen bg-gradient-to-br from-violet-400 via-purple-400 to-fuchsia-400 p-4 md:p-6">
+        {/* Header */}
+        <header className="text-center mb-6">
+          <motion.h1
+            className="text-4xl md:text-5xl font-black text-white drop-shadow-lg tracking-tight"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
             Jumbl
-          </h1>
-          <p className="text-center text-indigo-500 text-sm max-w-2xl mx-auto">
-            Find 8 words using the letters provided before time runs out!
-          </p>
-        </div>
+          </motion.h1>
+          <motion.p
+            className="text-white/90 text-sm md:text-base mt-1 font-medium"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.1 }}
+          >
+            Find 8 words before time runs out!
+          </motion.p>
+        </header>
 
         <GameContent />
-          
-        <footer className="mt-6 text-center text-gray-500 text-xs">
-          <p>© 2024 Jumbl - A fun word game challenge!</p>
+
+        {/* Footer */}
+        <footer className="mt-6 text-center">
+          <p className="text-white/60 text-xs">
+            © 2024 Jumbl
+          </p>
         </footer>
       </main>
     </GameProvider>
