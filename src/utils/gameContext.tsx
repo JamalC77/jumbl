@@ -238,51 +238,35 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  // Start the game with optional custom duration
-  const startGame = async (duration = DEFAULT_GAME_DURATION) => {
+  // Start the game (no timer - relaxed gameplay)
+  const startGame = async () => {
     // Get a new word set
     try {
       const newWordSet = await fetchRandomWordSet();
       setCurrentWordSet(newWordSet);
-      
+
       // Log game data for testing in dev console
       logGameDataForTesting(newWordSet);
-      
+
       // Set up game state
       setLetters(newWordSet.letters);
-      setRemainingTime(duration);
       setFoundWords([]);
       setGameActive(true);
       setGameCompleted(false);
       setHintsRemaining(5);
       setActiveHintLetters([]);
       setActiveHintPositions(new Map());
-      
+      setInputValue("");
+
       // Shuffle letters on start
       const shuffled = newWordSet.letters.split("").sort(() => Math.random() - 0.5).join("");
       setLetters(shuffled);
-      
-      // Clear any existing interval
+
+      // Clear any existing interval (no timer needed)
       if (timerInterval) {
         clearInterval(timerInterval);
+        setTimerInterval(null);
       }
-      
-      // Set up the timer
-      const interval = setInterval(() => {
-        setRemainingTime((prev) => {
-          if (prev <= 1) {
-            clearInterval(interval);
-            setGameActive(false);
-            setGameCompleted(true);
-            // Clean URL params when game ends automatically
-            cleanUrlParams();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      
-      setTimerInterval(interval);
     } catch (error) {
       console.error("Failed to start game:", error);
     }
@@ -456,7 +440,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setActiveHintPositions(new Map());
   };
 
-  // Start daily challenge
+  // Start daily challenge (no timer - relaxed gameplay)
   const startDailyChallenge = async (): Promise<boolean> => {
     // Check if already played today
     if (hasPlayedToday()) {
@@ -486,7 +470,6 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       setCurrentWordSet(wordSet);
       setLetters(data.letters);
-      setRemainingTime(DEFAULT_GAME_DURATION);
       setFoundWords([]);
       setGameActive(true);
       setGameCompleted(false);
@@ -500,25 +483,12 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const shuffled = data.letters.split("").sort(() => Math.random() - 0.5).join("");
       setLetters(shuffled);
 
-      // Clear any existing interval
+      // Clear any existing interval (no timer needed)
       if (timerInterval) {
         clearInterval(timerInterval);
+        setTimerInterval(null);
       }
 
-      // Set up the timer
-      const interval = setInterval(() => {
-        setRemainingTime((prev) => {
-          if (prev <= 1) {
-            clearInterval(interval);
-            setGameActive(false);
-            setGameCompleted(true);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-
-      setTimerInterval(interval);
       setIsLoading(false);
       return true;
     } catch (error) {
