@@ -1,195 +1,373 @@
 "use client";
 
 import { GameProvider } from '@/utils/gameContext';
-import LetterTiles from '@/components/LetterTiles';
-import WordInput from '@/components/WordInput';
-import GameTimer from '@/components/GameTimer';
-import WordList from '@/components/WordList';
-import GameControls from '@/components/GameControls';
-import DifficultySelector from '@/components/DifficultySelector';
-import GameSummary from '@/components/GameSummary';
-import ChallengeMode from '@/components/ChallengeMode';
-import DailyChallenge from '@/components/DailyChallenge';
-import StatsModal from '@/components/StatsModal';
 import { useGame } from '@/utils/gameContext';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getDayNumber } from '@/utils/dailyChallenge';
+import { getDayNumber, getDailyStats, hasPlayedToday } from '@/utils/dailyChallenge';
+import { celebrateWordFound, celebrateWin } from '@/utils/confetti';
+import StatsModal from '@/components/StatsModal';
 
-// Wrapper component to access game context for conditional rendering
-const GameContent = () => {
-  const { gameCompleted, gameActive, isChallenge, isDailyChallenge } = useGame();
-  const [showRules, setShowRules] = useState(false);
-  const [showStats, setShowStats] = useState(false);
+// Simple Word Progress Grid
+const WordProgress = () => {
+  const { foundWords, totalWords, currentWordSet, gameActive, gameCompleted } = useGame();
+  const allWords = currentWordSet?.words || [];
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
-      {/* Main Game Card */}
-      <motion.div
-        className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-xl overflow-hidden"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-      >
-        {/* Header with difficulty and timer */}
-        <div className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-indigo-100">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <DifficultySelector />
-              {/* Stats button */}
-              <button
-                onClick={() => setShowStats(true)}
-                className="p-2 hover:bg-indigo-100 rounded-lg transition-colors"
-                title="View Stats"
-              >
-                <svg className="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-              </button>
-            </div>
-            <GameTimer />
-          </div>
-
-          {/* Daily challenge badge */}
-          {isDailyChallenge && gameActive && (
-            <motion.div
-              className="mt-2 text-center"
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <span className="inline-flex items-center gap-1 px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-sm font-semibold">
-                📅 Daily Challenge #{getDayNumber()}
-              </span>
-            </motion.div>
-          )}
-        </div>
-
-        {/* Game content */}
-        <div className="p-6 space-y-8">
-          {/* Daily Challenge - show prominently when not in game */}
-          <AnimatePresence>
-            {!gameActive && !gameCompleted && (
-              <motion.section
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, height: 0 }}
-              >
-                <DailyChallenge onOpenStats={() => setShowStats(true)} />
-              </motion.section>
-            )}
-          </AnimatePresence>
-
-          {/* Letter tiles - HERO section */}
-          <section>
-            <LetterTiles />
-          </section>
-
-          {/* Word input controls */}
-          <section>
-            <WordInput />
-          </section>
-
-          {/* Game controls (Start/Give Up/Share) */}
-          <section>
-            <GameControls />
-          </section>
-
-          {/* Word list with progress */}
-          <section>
-            <WordList />
-          </section>
-
-          {/* Challenge Mode - only show when no game is active and not showing daily */}
-          <AnimatePresence>
-            {!gameActive && !gameCompleted && !isChallenge && (
-              <motion.section
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-              >
-                <ChallengeMode />
-              </motion.section>
-            )}
-          </AnimatePresence>
-
-          {/* Game Summary - only show when game is completed */}
-          <AnimatePresence>
-            {gameCompleted && (
-              <motion.section
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-              >
-                <GameSummary />
-              </motion.section>
-            )}
-          </AnimatePresence>
-        </div>
-      </motion.div>
-
-      {/* How to Play - Collapsible */}
-      <motion.div
-        className="mt-4 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2 }}
-      >
-        <button
-          onClick={() => setShowRules(!showRules)}
-          className="w-full p-4 flex justify-between items-center text-indigo-700 hover:bg-indigo-50 transition-colors"
-        >
-          <span className="font-bold">How to Play</span>
-          <motion.span
-            animate={{ rotate: showRules ? 180 : 0 }}
-            transition={{ duration: 0.2 }}
+    <div className="space-y-2">
+      {allWords.map((word, index) => {
+        const isFound = foundWords.includes(word);
+        return (
+          <motion.div
+            key={word}
+            className={`flex justify-center gap-1`}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.1 }}
           >
-            ▼
-          </motion.span>
+            {word.split('').map((letter, letterIndex) => (
+              <div
+                key={letterIndex}
+                className={`w-10 h-10 md:w-12 md:h-12 flex items-center justify-center
+                  text-lg md:text-xl font-bold rounded border-2
+                  ${isFound
+                    ? 'bg-emerald-500 border-emerald-600 text-white'
+                    : gameCompleted
+                      ? 'bg-gray-300 border-gray-400 text-gray-600'
+                      : letterIndex === 0
+                        ? 'bg-amber-100 border-amber-300 text-amber-700'
+                        : 'bg-gray-100 border-gray-200 text-gray-400'
+                  }`}
+              >
+                {isFound || gameCompleted ? letter : (letterIndex === 0 ? letter : '')}
+              </div>
+            ))}
+          </motion.div>
+        );
+      })}
+
+      {/* Placeholder when no game */}
+      {allWords.length === 0 && (
+        <div className="space-y-2">
+          {[1, 2, 3, 4, 5].map((row) => (
+            <div key={row} className="flex justify-center gap-1">
+              {[1, 2, 3, 4, 5].map((col) => (
+                <div
+                  key={col}
+                  className="w-10 h-10 md:w-12 md:h-12 bg-gray-100 border-2 border-gray-200 rounded"
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Letter Keyboard
+const LetterKeyboard = () => {
+  const { letters, gameActive, addLetterToInput, inputValue, wordLength } = useGame();
+
+  const colors = [
+    'bg-pink-500', 'bg-orange-500', 'bg-yellow-500', 'bg-emerald-500',
+    'bg-cyan-500', 'bg-blue-500', 'bg-violet-500', 'bg-fuchsia-500',
+    'bg-rose-500', 'bg-amber-500', 'bg-lime-500', 'bg-teal-500',
+  ];
+
+  const handleClick = (letter: string) => {
+    if (gameActive && inputValue.length < wordLength) {
+      addLetterToInput(letter);
+    }
+  };
+
+  if (!letters || letters === 'JUMBL') {
+    return (
+      <div className="flex flex-wrap justify-center gap-2">
+        {'JUMBL'.split('').map((letter, index) => (
+          <div
+            key={index}
+            className={`w-12 h-12 md:w-14 md:h-14 flex items-center justify-center
+              text-xl md:text-2xl font-bold text-white rounded-lg ${colors[index % colors.length]}
+              opacity-50`}
+          >
+            {letter}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-wrap justify-center gap-2 max-w-xs mx-auto">
+      {letters.split('').map((letter, index) => (
+        <motion.button
+          key={`${letter}-${index}`}
+          onClick={() => handleClick(letter)}
+          disabled={!gameActive}
+          className={`w-12 h-12 md:w-14 md:h-14 flex items-center justify-center
+            text-xl md:text-2xl font-bold text-white rounded-lg shadow-lg
+            ${colors[index % colors.length]}
+            ${gameActive ? 'hover:scale-110 active:scale-95' : 'opacity-50'}
+            transition-transform`}
+          whileTap={gameActive ? { scale: 0.9 } : {}}
+        >
+          {letter}
+        </motion.button>
+      ))}
+    </div>
+  );
+};
+
+// Current Input Display
+const CurrentInput = () => {
+  const { inputValue, wordLength, gameActive } = useGame();
+
+  if (!gameActive) return null;
+
+  return (
+    <div className="flex justify-center gap-1 mb-4">
+      {Array.from({ length: wordLength }).map((_, index) => (
+        <motion.div
+          key={index}
+          className={`w-10 h-10 md:w-12 md:h-12 flex items-center justify-center
+            text-lg md:text-xl font-bold rounded border-2
+            ${inputValue[index]
+              ? 'bg-indigo-100 border-indigo-400 text-indigo-700'
+              : 'bg-white border-gray-300'
+            }`}
+          animate={inputValue[index] ? { scale: [0.8, 1] } : {}}
+        >
+          {inputValue[index] || ''}
+        </motion.div>
+      ))}
+    </div>
+  );
+};
+
+// Action Buttons
+const ActionButtons = () => {
+  const {
+    gameActive, inputValue, wordLength, addFoundWord,
+    removeLastLetter, clearInput, triggerCelebration,
+    foundWords, totalWords
+  } = useGame();
+
+  const [feedback, setFeedback] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (triggerCelebration) {
+      celebrateWordFound();
+      setFeedback('Nice!');
+      setTimeout(() => setFeedback(null), 1000);
+
+      if (foundWords.length + 1 === totalWords) {
+        setTimeout(() => celebrateWin(), 300);
+      }
+    }
+  }, [triggerCelebration]);
+
+  const handleSubmit = () => {
+    if (inputValue.length !== wordLength) {
+      setFeedback(`Need ${wordLength} letters`);
+      setTimeout(() => setFeedback(null), 1500);
+      return;
+    }
+
+    const success = addFoundWord(inputValue);
+    if (!success) {
+      setFeedback('Not a valid word');
+      clearInput();
+      setTimeout(() => setFeedback(null), 1500);
+    }
+  };
+
+  if (!gameActive) return null;
+
+  return (
+    <div className="space-y-3">
+      {/* Feedback */}
+      <AnimatePresence>
+        {feedback && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className={`text-center py-2 px-4 rounded-full font-semibold text-sm mx-auto w-fit
+              ${feedback === 'Nice!' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}
+          >
+            {feedback}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Buttons */}
+      <div className="flex justify-center gap-3">
+        <button
+          onClick={removeLastLetter}
+          disabled={inputValue.length === 0}
+          className="px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded-lg
+            disabled:opacity-40 hover:bg-gray-300 transition-colors"
+        >
+          ← Delete
         </button>
 
-        <AnimatePresence>
-          {showRules && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="px-4 pb-4"
-            >
-              <ul className="space-y-2 text-gray-600 text-sm">
-                <li className="flex items-start gap-2">
-                  <span className="text-indigo-500 mt-0.5">●</span>
-                  <span>Find 8 words using the letters provided within 5 minutes</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-indigo-500 mt-0.5">●</span>
-                  <span>Click the letter tiles to build your word, then hit Submit</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-indigo-500 mt-0.5">●</span>
-                  <span>The first letter of each word is shown as a hint</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-indigo-500 mt-0.5">●</span>
-                  <span>Right-click a tile to use one of your 5 hints</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-indigo-500 mt-0.5">●</span>
-                  <span>Use Shuffle to rearrange letters for a fresh perspective</span>
-                </li>
-              </ul>
+        <button
+          onClick={handleSubmit}
+          disabled={inputValue.length !== wordLength}
+          className={`px-6 py-2 font-bold rounded-lg transition-all
+            ${inputValue.length === wordLength
+              ? 'bg-emerald-500 text-white hover:bg-emerald-600'
+              : 'bg-gray-200 text-gray-500'
+            }`}
+        >
+          Enter
+        </button>
 
-              <div className="mt-4 p-3 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200">
-                <p className="text-amber-700 text-sm font-medium">
-                  🔥 Play the Daily Challenge to build your streak and compete with friends!
-                </p>
-              </div>
-            </motion.div>
+        <button
+          onClick={clearInput}
+          disabled={inputValue.length === 0}
+          className="px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded-lg
+            disabled:opacity-40 hover:bg-gray-300 transition-colors"
+        >
+          Clear
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// Timer Display
+const Timer = () => {
+  const { remainingTime, gameActive } = useGame();
+
+  const minutes = Math.floor(remainingTime / 60);
+  const seconds = remainingTime % 60;
+  const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+  const isLow = remainingTime <= 60;
+
+  return (
+    <div className={`text-2xl font-mono font-bold
+      ${!gameActive ? 'text-gray-400' : isLow ? 'text-red-500' : 'text-emerald-600'}`}>
+      {timeStr}
+    </div>
+  );
+};
+
+// Main Game Component
+const GameContent = () => {
+  const { gameActive, gameCompleted, startGame, startDailyChallenge, resetGame, isLoading, foundWords, totalWords } = useGame();
+  const [showStats, setShowStats] = useState(false);
+  const playedToday = hasPlayedToday();
+  const stats = getDailyStats();
+
+  return (
+    <div className="w-full max-w-md mx-auto">
+      {/* Game Card */}
+      <div className="bg-white rounded-2xl shadow-xl p-4 md:p-6">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-4">
+          <button
+            onClick={() => setShowStats(true)}
+            className="p-2 hover:bg-gray-100 rounded-lg"
+          >
+            <svg className="w-6 h-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          </button>
+
+          <Timer />
+
+          {stats.currentStreak > 0 && (
+            <div className="flex items-center gap-1 text-orange-500 font-bold">
+              🔥 {stats.currentStreak}
+            </div>
           )}
-        </AnimatePresence>
-      </motion.div>
+        </div>
 
-      {/* Stats Modal */}
+        {/* Word Progress Grid */}
+        <div className="mb-6">
+          <WordProgress />
+        </div>
+
+        {/* Current Input */}
+        <CurrentInput />
+
+        {/* Letter Keyboard */}
+        <div className="mb-4">
+          <LetterKeyboard />
+        </div>
+
+        {/* Action Buttons */}
+        <ActionButtons />
+
+        {/* Start/End Game Buttons */}
+        {!gameActive && !gameCompleted && (
+          <div className="space-y-3 mt-6">
+            {/* Daily Challenge */}
+            <button
+              onClick={() => startDailyChallenge()}
+              disabled={isLoading || playedToday}
+              className={`w-full py-3 font-bold rounded-xl transition-all
+                ${playedToday
+                  ? 'bg-gray-200 text-gray-500'
+                  : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:shadow-lg'
+                }`}
+            >
+              {isLoading ? 'Loading...' : playedToday ? '✓ Daily Complete' : `📅 Daily #${getDayNumber()}`}
+            </button>
+
+            {/* Practice Game */}
+            <button
+              onClick={() => startGame()}
+              disabled={isLoading}
+              className="w-full py-3 bg-indigo-500 text-white font-bold rounded-xl hover:bg-indigo-600 transition-colors"
+            >
+              {isLoading ? 'Loading...' : 'Practice Game'}
+            </button>
+          </div>
+        )}
+
+        {/* Game Over */}
+        {gameCompleted && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-6 text-center space-y-4"
+          >
+            <div className={`text-2xl font-bold
+              ${foundWords.length === totalWords ? 'text-emerald-600' : 'text-gray-600'}`}>
+              {foundWords.length === totalWords ? '🎉 Perfect!' : `${foundWords.length}/${totalWords} Found`}
+            </div>
+
+            <button
+              onClick={resetGame}
+              className="px-6 py-2 bg-indigo-500 text-white font-bold rounded-xl hover:bg-indigo-600"
+            >
+              Play Again
+            </button>
+          </motion.div>
+        )}
+
+        {/* Give Up (during game) */}
+        {gameActive && (
+          <div className="mt-4 text-center">
+            <button
+              onClick={resetGame}
+              className="text-sm text-gray-500 hover:text-red-500"
+            >
+              Give Up
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* How to Play */}
+      <div className="mt-4 text-center text-white/80 text-sm">
+        <p>Find 5 words using the letters • Tap letters to spell</p>
+      </div>
+
       <StatsModal isOpen={showStats} onClose={() => setShowStats(false)} />
     </div>
   );
@@ -198,34 +376,18 @@ const GameContent = () => {
 export default function Home() {
   return (
     <GameProvider>
-      <main className="min-h-screen bg-gradient-to-br from-violet-400 via-purple-400 to-fuchsia-400 p-4 md:p-6">
+      <main className="min-h-screen bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 p-4 flex flex-col">
         {/* Header */}
-        <header className="text-center mb-6">
-          <motion.h1
-            className="text-4xl md:text-5xl font-black text-white drop-shadow-lg tracking-tight"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
+        <header className="text-center py-4">
+          <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">
             Jumbl
-          </motion.h1>
-          <motion.p
-            className="text-white/90 text-sm md:text-base mt-1 font-medium"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.1 }}
-          >
-            Find 8 words before time runs out!
-          </motion.p>
+          </h1>
         </header>
 
-        <GameContent />
-
-        {/* Footer */}
-        <footer className="mt-6 text-center">
-          <p className="text-white/60 text-xs">
-            © 2024 Jumbl
-          </p>
-        </footer>
+        {/* Game */}
+        <div className="flex-1 flex items-start justify-center">
+          <GameContent />
+        </div>
       </main>
     </GameProvider>
   );

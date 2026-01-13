@@ -90,8 +90,8 @@ export async function GET() {
     // Shuffle words using seeded RNG (deterministic for the day)
     const shuffled = rng.shuffle(words);
 
-    // Select 8 words
-    const selectedWords = shuffled.slice(0, 8).map(w => w.toUpperCase());
+    // Select 5 words (simpler gameplay)
+    const selectedWords = shuffled.slice(0, 5).map(w => w.toUpperCase());
 
     // Create unique letter set
     const allLetters = selectedWords.join('');
