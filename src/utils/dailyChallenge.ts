@@ -198,24 +198,24 @@ export const generateShareText = (
   const dayNumber = getDayNumber();
   const header = isDaily ? `JUMBL #${dayNumber}` : 'JUMBL';
 
-  // Create emoji grid (8 squares for 8 words)
+  // Create emoji grid
   const found = Math.min(wordsFound, totalWords);
   const emptySquares = totalWords - found;
 
-  // Use different colors based on performance
+  // Use different colors based on performance (adjusted for 3 words)
   let squares = '';
   if (wordsFound === totalWords) {
     // Perfect - all green
     squares = '🟩'.repeat(totalWords);
-  } else if (wordsFound >= 6) {
-    // Good - mostly green
+  } else if (wordsFound >= 2) {
+    // Good - mostly green (2/3 found)
     squares = '🟩'.repeat(found) + '⬜'.repeat(emptySquares);
-  } else if (wordsFound >= 4) {
-    // Medium - yellow and white
+  } else if (wordsFound === 1) {
+    // Got one - yellow
     squares = '🟨'.repeat(found) + '⬜'.repeat(emptySquares);
   } else {
-    // Struggling - orange/red
-    squares = '🟧'.repeat(found) + '⬜'.repeat(emptySquares);
+    // None found
+    squares = '⬜'.repeat(totalWords);
   }
 
   // Format time remaining
@@ -230,7 +230,7 @@ export const generateShareText = (
     `🔤 ${header}`,
     '',
     squares,
-    `${wordsFound}/${totalWords} words | ${hintsUsed}/5 hints`,
+    `${wordsFound}/${totalWords} words`,
   ];
 
   if (wordsFound === totalWords) {
