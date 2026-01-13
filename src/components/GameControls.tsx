@@ -17,7 +17,9 @@ const GameControls: React.FC = () => {
     generateGameSeed,
     hintsRemaining,
     gameDifficulty,
-    startGameWithSeed
+    startGameWithSeed,
+    isDailyChallenge,
+    getDailyShareText,
   } = useGame();
 
   const [seedInput, setSeedInput] = useState<string>("");
@@ -25,25 +27,34 @@ const GameControls: React.FC = () => {
   const [seedError, setSeedError] = useState<string>("");
 
   const shareResults = () => {
-    const seed = generateGameSeed();
-    const shareUrl = `${window.location.origin}${window.location.pathname}?seed=${seed}`;
-    const hintsUsed = 5 - hintsRemaining;
+    let text: string;
+    let shareUrl: string;
 
-    // Create emoji progress bar
-    const filledBlocks = Math.round((currentScore / totalWords) * 8);
-    const emptyBlocks = 8 - filledBlocks;
-    const progressBar = '🟩'.repeat(filledBlocks) + '⬜'.repeat(emptyBlocks);
+    if (isDailyChallenge) {
+      // Use the formatted daily share text
+      text = getDailyShareText();
+      shareUrl = window.location.origin;
+    } else {
+      // Regular game share
+      const seed = generateGameSeed();
+      shareUrl = `${window.location.origin}${window.location.pathname}?seed=${seed}`;
+      const hintsUsed = 5 - hintsRemaining;
 
-    const text = `🔤 JUMBL
+      const filledBlocks = Math.round((currentScore / totalWords) * 8);
+      const emptyBlocks = 8 - filledBlocks;
+      const progressBar = '🟩'.repeat(filledBlocks) + '⬜'.repeat(emptyBlocks);
+
+      text = `🔤 JUMBL
 
 ${progressBar}
 ${currentScore}/${totalWords} words | ${hintsUsed}/5 hints
 
 Can you beat my score?`;
+    }
 
     if (navigator.share) {
       navigator.share({
-        title: 'Jumbl Challenge',
+        title: isDailyChallenge ? 'Jumbl Daily Challenge' : 'Jumbl Challenge',
         text: text,
         url: shareUrl,
       }).catch(console.error);

@@ -1,11 +1,9 @@
 [build]
-  command = "npm run build-lax"
+  command = "npm run build"
   publish = ".next"
 
 [build.environment]
-  NETLIFY_NEXT_PLUGIN_SKIP = "true"
   NODE_VERSION = "18"
-  
-[dev]
-  command = "npm run dev"
-  framework = "nextjs" 
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
