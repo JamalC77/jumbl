@@ -8,9 +8,9 @@ import { getDayNumber, getDailyStats, hasPlayedToday } from '@/utils/dailyChalle
 import { celebrateWordFound, celebrateWin } from '@/utils/confetti';
 import StatsModal from '@/components/StatsModal';
 
-// Simple Word Progress Grid with length hints
+// Simple Word Progress Grid with first letter shown
 const WordProgress = () => {
-  const { foundWords, totalWords, currentWordSet, gameActive, gameCompleted } = useGame();
+  const { foundWords, currentWordSet, gameCompleted } = useGame();
   const allWords = currentWordSet?.words || [];
 
   return (
@@ -34,10 +34,14 @@ const WordProgress = () => {
                     ? 'bg-emerald-500 border-emerald-600 text-white shadow-md'
                     : gameCompleted
                       ? 'bg-gray-300 border-gray-400 text-gray-600'
-                      : 'bg-white border-gray-300'
+                      : letterIndex === 0
+                        ? 'bg-amber-100 border-amber-400 text-amber-700'
+                        : 'bg-white border-gray-300'
                   }`}
               >
                 {isFound || gameCompleted ? (
+                  letter
+                ) : letterIndex === 0 ? (
                   letter
                 ) : (
                   <span className="w-2.5 h-2.5 rounded-full bg-gray-300"></span>
@@ -56,9 +60,17 @@ const WordProgress = () => {
               {[1, 2, 3, 4, 5].map((col) => (
                 <div
                   key={col}
-                  className="w-11 h-11 md:w-12 md:h-12 bg-gray-100 border-2 border-gray-200 rounded-lg flex items-center justify-center"
+                  className={`w-11 h-11 md:w-12 md:h-12 border-2 rounded-lg flex items-center justify-center
+                    ${col === 1
+                      ? 'bg-amber-100 border-amber-300'
+                      : 'bg-gray-100 border-gray-200'
+                    }`}
                 >
-                  <span className="w-2.5 h-2.5 rounded-full bg-gray-300"></span>
+                  {col === 1 ? (
+                    <span className="text-amber-400 font-bold">?</span>
+                  ) : (
+                    <span className="w-2.5 h-2.5 rounded-full bg-gray-300"></span>
+                  )}
                 </div>
               ))}
             </div>
@@ -175,7 +187,7 @@ const ActionButtons = () => {
   const {
     gameActive, inputValue, wordLength, addFoundWord,
     removeLastLetter, clearInput, triggerCelebration,
-    foundWords, totalWords
+    foundWords, totalWords, currentWordSet
   } = useGame();
 
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -190,7 +202,18 @@ const ActionButtons = () => {
         setTimeout(() => celebrateWin(), 300);
       }
     }
-  }, [triggerCelebration]);
+  }, [triggerCelebration, foundWords.length, totalWords]);
+
+  // Check if input is an anagram of any unfound word
+  const isAlmostCorrect = (input: string): boolean => {
+    if (!currentWordSet) return false;
+    const sortedInput = input.toUpperCase().split('').sort().join('');
+    const unfoundWords = currentWordSet.words.filter(w => !foundWords.includes(w));
+    return unfoundWords.some(word => {
+      const sortedWord = word.split('').sort().join('');
+      return sortedInput === sortedWord;
+    });
+  };
 
   const handleSubmit = () => {
     if (inputValue.length !== wordLength) {
@@ -201,7 +224,12 @@ const ActionButtons = () => {
 
     const success = addFoundWord(inputValue);
     if (!success) {
-      setFeedback('Not a valid word');
+      // Check if it's an anagram of a target word
+      if (isAlmostCorrect(inputValue)) {
+        setFeedback('Almost! Try rearranging');
+      } else {
+        setFeedback('Not a valid word');
+      }
       clearInput();
       setTimeout(() => setFeedback(null), 1500);
     }
@@ -219,7 +247,12 @@ const ActionButtons = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             className={`text-center py-2 px-4 rounded-full font-semibold text-sm mx-auto w-fit
-              ${feedback === 'Nice!' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}
+              ${feedback === 'Nice!'
+                ? 'bg-emerald-100 text-emerald-700'
+                : feedback.startsWith('Almost')
+                  ? 'bg-amber-100 text-amber-700'
+                  : 'bg-red-100 text-red-700'
+              }`}
           >
             {feedback}
           </motion.div>
@@ -262,20 +295,15 @@ const ActionButtons = () => {
   );
 };
 
-// Timer Display
-const Timer = () => {
-  const { remainingTime, gameActive } = useGame();
+// Progress indicator (words found)
+const ProgressIndicator = () => {
+  const { foundWords, totalWords, gameActive } = useGame();
 
-  const minutes = Math.floor(remainingTime / 60);
-  const seconds = remainingTime % 60;
-  const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-
-  const isLow = remainingTime <= 60;
+  if (!gameActive) return null;
 
   return (
-    <div className={`text-2xl font-mono font-bold
-      ${!gameActive ? 'text-gray-400' : isLow ? 'text-red-500' : 'text-emerald-600'}`}>
-      {timeStr}
+    <div className="text-lg font-bold text-emerald-600">
+      {foundWords.length}/{totalWords}
     </div>
   );
 };
@@ -302,7 +330,7 @@ const GameContent = () => {
             </svg>
           </button>
 
-          <Timer />
+          <ProgressIndicator />
 
           {stats.currentStreak > 0 && (
             <div className="flex items-center gap-1 text-orange-500 font-bold">
