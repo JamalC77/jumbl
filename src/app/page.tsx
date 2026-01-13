@@ -8,19 +8,19 @@ import { getDayNumber, getDailyStats, hasPlayedToday } from '@/utils/dailyChalle
 import { celebrateWordFound, celebrateWin } from '@/utils/confetti';
 import StatsModal from '@/components/StatsModal';
 
-// Simple Word Progress Grid
+// Simple Word Progress Grid with length hints
 const WordProgress = () => {
   const { foundWords, totalWords, currentWordSet, gameActive, gameCompleted } = useGame();
   const allWords = currentWordSet?.words || [];
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {allWords.map((word, index) => {
         const isFound = foundWords.includes(word);
         return (
           <motion.div
             key={word}
-            className={`flex justify-center gap-1`}
+            className={`flex justify-center gap-1.5`}
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.1 }}
@@ -28,34 +28,38 @@ const WordProgress = () => {
             {word.split('').map((letter, letterIndex) => (
               <div
                 key={letterIndex}
-                className={`w-10 h-10 md:w-12 md:h-12 flex items-center justify-center
-                  text-lg md:text-xl font-bold rounded border-2
+                className={`w-11 h-11 md:w-12 md:h-12 flex items-center justify-center
+                  text-lg md:text-xl font-bold rounded-lg border-2 transition-all
                   ${isFound
-                    ? 'bg-emerald-500 border-emerald-600 text-white'
+                    ? 'bg-emerald-500 border-emerald-600 text-white shadow-md'
                     : gameCompleted
                       ? 'bg-gray-300 border-gray-400 text-gray-600'
-                      : letterIndex === 0
-                        ? 'bg-amber-100 border-amber-300 text-amber-700'
-                        : 'bg-gray-100 border-gray-200 text-gray-400'
+                      : 'bg-white border-gray-300'
                   }`}
               >
-                {isFound || gameCompleted ? letter : (letterIndex === 0 ? letter : '')}
+                {isFound || gameCompleted ? (
+                  letter
+                ) : (
+                  <span className="w-2.5 h-2.5 rounded-full bg-gray-300"></span>
+                )}
               </div>
             ))}
           </motion.div>
         );
       })}
 
-      {/* Placeholder when no game */}
+      {/* Placeholder when no game - show 3 words */}
       {allWords.length === 0 && (
-        <div className="space-y-2">
-          {[1, 2, 3, 4, 5].map((row) => (
-            <div key={row} className="flex justify-center gap-1">
+        <div className="space-y-3">
+          {[1, 2, 3].map((row) => (
+            <div key={row} className="flex justify-center gap-1.5">
               {[1, 2, 3, 4, 5].map((col) => (
                 <div
                   key={col}
-                  className="w-10 h-10 md:w-12 md:h-12 bg-gray-100 border-2 border-gray-200 rounded"
-                />
+                  className="w-11 h-11 md:w-12 md:h-12 bg-gray-100 border-2 border-gray-200 rounded-lg flex items-center justify-center"
+                >
+                  <span className="w-2.5 h-2.5 rounded-full bg-gray-300"></span>
+                </div>
               ))}
             </div>
           ))}
@@ -65,9 +69,9 @@ const WordProgress = () => {
   );
 };
 
-// Letter Keyboard
+// Letter Keyboard with Shuffle
 const LetterKeyboard = () => {
-  const { letters, gameActive, addLetterToInput, inputValue, wordLength } = useGame();
+  const { letters, gameActive, addLetterToInput, inputValue, wordLength, shuffleLetters } = useGame();
 
   const colors = [
     'bg-pink-500', 'bg-orange-500', 'bg-yellow-500', 'bg-emerald-500',
@@ -99,22 +103,43 @@ const LetterKeyboard = () => {
   }
 
   return (
-    <div className="flex flex-wrap justify-center gap-2 max-w-xs mx-auto">
-      {letters.split('').map((letter, index) => (
-        <motion.button
-          key={`${letter}-${index}`}
-          onClick={() => handleClick(letter)}
-          disabled={!gameActive}
-          className={`w-12 h-12 md:w-14 md:h-14 flex items-center justify-center
-            text-xl md:text-2xl font-bold text-white rounded-lg shadow-lg
-            ${colors[index % colors.length]}
-            ${gameActive ? 'hover:scale-110 active:scale-95' : 'opacity-50'}
-            transition-transform`}
-          whileTap={gameActive ? { scale: 0.9 } : {}}
-        >
-          {letter}
-        </motion.button>
-      ))}
+    <div className="space-y-3">
+      {/* Letter tiles */}
+      <div className="flex flex-wrap justify-center gap-2 max-w-xs mx-auto">
+        {letters.split('').map((letter, index) => (
+          <motion.button
+            key={`${letter}-${index}`}
+            onClick={() => handleClick(letter)}
+            disabled={!gameActive}
+            className={`w-12 h-12 md:w-14 md:h-14 flex items-center justify-center
+              text-xl md:text-2xl font-bold text-white rounded-xl shadow-lg
+              ${colors[index % colors.length]}
+              ${gameActive ? 'hover:scale-110 active:scale-95' : 'opacity-50'}
+              transition-transform`}
+            whileTap={gameActive ? { scale: 0.9 } : {}}
+          >
+            {letter}
+          </motion.button>
+        ))}
+      </div>
+
+      {/* Shuffle button */}
+      {gameActive && (
+        <div className="flex justify-center">
+          <motion.button
+            onClick={shuffleLetters}
+            className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30
+              text-gray-600 font-medium rounded-full transition-colors border border-gray-200"
+            whileTap={{ scale: 0.95 }}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Shuffle
+          </motion.button>
+        </div>
+      )}
     </div>
   );
 };
@@ -365,7 +390,7 @@ const GameContent = () => {
 
       {/* How to Play */}
       <div className="mt-4 text-center text-white/80 text-sm">
-        <p>Find 5 words using the letters • Tap letters to spell</p>
+        <p>Find 3 words using the letters • Tap to spell • Shuffle if stuck!</p>
       </div>
 
       <StatsModal isOpen={showStats} onClose={() => setShowStats(false)} />

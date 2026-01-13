@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import { COMMON_WORDS } from '@/data/commonWords';
 
 // Seeded random number generator (deterministic)
 class SeededRandom {
@@ -69,29 +68,14 @@ export async function GET() {
     const seed = generateDailySeed(today);
     const rng = new SeededRandom(seed);
 
-    // Read words from file
-    const filePath = path.join(process.cwd(), 'public', 'words.txt');
-    const fileContent = fs.readFileSync(filePath, 'utf8');
-
-    const words = fileContent.split('\n')
-      .map(line => {
-        const match = line.trim().match(/^[a-z]{5}$/);
-        return match ? match[0] : null;
-      })
-      .filter(Boolean) as string[];
-
-    if (!words.length) {
-      return NextResponse.json(
-        { error: 'No valid words found' },
-        { status: 500 }
-      );
-    }
+    // Use curated common words list
+    const words = COMMON_WORDS;
 
     // Shuffle words using seeded RNG (deterministic for the day)
     const shuffled = rng.shuffle(words);
 
-    // Select 5 words (simpler gameplay)
-    const selectedWords = shuffled.slice(0, 5).map(w => w.toUpperCase());
+    // Select 3 words (simple, achievable gameplay)
+    const selectedWords = shuffled.slice(0, 3).map(w => w.toUpperCase());
 
     // Create unique letter set
     const allLetters = selectedWords.join('');
