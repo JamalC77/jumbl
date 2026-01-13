@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { WordSet, getRandomWordSet, logGameDataForTesting } from "./gameData";
 import { WordDifficulty } from "./openAiService";
 import { generateSeed, loadGameFromSeed } from "./seedUtils";
+import { recordDailyResult, hasPlayedToday, generateShareText, getDayNumber } from "./dailyChallenge";
 
 // Default game duration in seconds (5 minutes)
 const DEFAULT_GAME_DURATION = 300;
@@ -46,6 +47,10 @@ interface GameContextType {
   // Celebration trigger
   triggerCelebration: boolean;
   setTriggerCelebration: (value: boolean) => void;
+  // Daily challenge
+  isDailyChallenge: boolean;
+  startDailyChallenge: () => Promise<boolean>;
+  getDailyShareText: () => string;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -68,6 +73,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [unusedLetters, setUnusedLetters] = useState<string[]>([]);
   const [inputValue, setInputValue] = useState<string>("");
   const [triggerCelebration, setTriggerCelebration] = useState<boolean>(false);
+  const [isDailyChallenge, setIsDailyChallenge] = useState<boolean>(false);
 
   // Add a letter to the input (for click-to-type)
   const addLetterToInput = (letter: string) => {
@@ -313,6 +319,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setActiveHintPositions(new Map());
     setIsChallenge(false);
     setChallengeStartTime(null);
+    setIsDailyChallenge(false);
     // Return to JUMBL
     setLetters("JUMBL");
     // Clean URL params
@@ -449,6 +456,102 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setActiveHintPositions(new Map());
   };
 
+  // Start daily challenge
+  const startDailyChallenge = async (): Promise<boolean> => {
+    // Check if already played today
+    if (hasPlayedToday()) {
+      console.log("Already played today's daily challenge");
+      return false;
+    }
+
+    try {
+      setIsLoading(true);
+
+      // Fetch daily challenge from API
+      const response = await fetch('/api/daily');
+      if (!response.ok) {
+        throw new Error('Failed to fetch daily challenge');
+      }
+
+      const data = await response.json();
+
+      // Create word set from daily data
+      const wordSet: WordSet = {
+        words: data.words,
+        letters: data.letters,
+        wordLength: 5,
+        gameDifficulty: 'normal',
+        wordDifficulties: new Map(),
+      };
+
+      setCurrentWordSet(wordSet);
+      setLetters(data.letters);
+      setRemainingTime(DEFAULT_GAME_DURATION);
+      setFoundWords([]);
+      setGameActive(true);
+      setGameCompleted(false);
+      setHintsRemaining(5);
+      setActiveHintLetters([]);
+      setActiveHintPositions(new Map());
+      setIsDailyChallenge(true);
+      setInputValue("");
+
+      // Shuffle letters on start
+      const shuffled = data.letters.split("").sort(() => Math.random() - 0.5).join("");
+      setLetters(shuffled);
+
+      // Clear any existing interval
+      if (timerInterval) {
+        clearInterval(timerInterval);
+      }
+
+      // Set up the timer
+      const interval = setInterval(() => {
+        setRemainingTime((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            setGameActive(false);
+            setGameCompleted(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      setTimerInterval(interval);
+      setIsLoading(false);
+      return true;
+    } catch (error) {
+      console.error("Failed to start daily challenge:", error);
+      setIsLoading(false);
+      return false;
+    }
+  };
+
+  // Generate share text for current game
+  const getDailyShareText = (): string => {
+    return generateShareText(
+      foundWords.length,
+      currentWordSet?.words.length || 8,
+      5 - hintsRemaining,
+      remainingTime,
+      isDailyChallenge
+    );
+  };
+
+  // Record daily result when game ends
+  useEffect(() => {
+    if (gameCompleted && isDailyChallenge && currentWordSet) {
+      recordDailyResult({
+        wordsFound: foundWords.length,
+        totalWords: currentWordSet.words.length,
+        timeRemaining: remainingTime,
+        hintsUsed: 5 - hintsRemaining,
+        completed: foundWords.length === currentWordSet.words.length,
+      });
+    }
+  }, [gameCompleted, isDailyChallenge]);
+
   // Cleanup effect
   useEffect(() => {
     return () => {
@@ -496,6 +599,9 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         clearInput,
         triggerCelebration,
         setTriggerCelebration,
+        isDailyChallenge,
+        startDailyChallenge,
+        getDailyShareText,
       }}
     >
       {children}
