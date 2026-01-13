@@ -9,14 +9,18 @@ import GameControls from '@/components/GameControls';
 import DifficultySelector from '@/components/DifficultySelector';
 import GameSummary from '@/components/GameSummary';
 import ChallengeMode from '@/components/ChallengeMode';
+import DailyChallenge from '@/components/DailyChallenge';
+import StatsModal from '@/components/StatsModal';
 import { useGame } from '@/utils/gameContext';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getDayNumber } from '@/utils/dailyChallenge';
 
 // Wrapper component to access game context for conditional rendering
 const GameContent = () => {
-  const { gameCompleted, gameActive, isChallenge } = useGame();
+  const { gameCompleted, gameActive, isChallenge, isDailyChallenge } = useGame();
   const [showRules, setShowRules] = useState(false);
+  const [showStats, setShowStats] = useState(false);
 
   return (
     <div className="w-full max-w-2xl mx-auto">
@@ -30,13 +34,51 @@ const GameContent = () => {
         {/* Header with difficulty and timer */}
         <div className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-indigo-100">
           <div className="flex justify-between items-center">
-            <DifficultySelector />
+            <div className="flex items-center gap-3">
+              <DifficultySelector />
+              {/* Stats button */}
+              <button
+                onClick={() => setShowStats(true)}
+                className="p-2 hover:bg-indigo-100 rounded-lg transition-colors"
+                title="View Stats"
+              >
+                <svg className="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </button>
+            </div>
             <GameTimer />
           </div>
+
+          {/* Daily challenge badge */}
+          {isDailyChallenge && gameActive && (
+            <motion.div
+              className="mt-2 text-center"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-sm font-semibold">
+                📅 Daily Challenge #{getDayNumber()}
+              </span>
+            </motion.div>
+          )}
         </div>
 
         {/* Game content */}
         <div className="p-6 space-y-8">
+          {/* Daily Challenge - show prominently when not in game */}
+          <AnimatePresence>
+            {!gameActive && !gameCompleted && (
+              <motion.section
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, height: 0 }}
+              >
+                <DailyChallenge onOpenStats={() => setShowStats(true)} />
+              </motion.section>
+            )}
+          </AnimatePresence>
+
           {/* Letter tiles - HERO section */}
           <section>
             <LetterTiles />
@@ -57,7 +99,7 @@ const GameContent = () => {
             <WordList />
           </section>
 
-          {/* Challenge Mode - only show when no game is active */}
+          {/* Challenge Mode - only show when no game is active and not showing daily */}
           <AnimatePresence>
             {!gameActive && !gameCompleted && !isChallenge && (
               <motion.section
@@ -137,15 +179,18 @@ const GameContent = () => {
                 </li>
               </ul>
 
-              <div className="mt-4 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100">
-                <p className="text-purple-700 text-sm font-medium">
-                  Challenge friends by sharing your puzzle link after completing a game!
+              <div className="mt-4 p-3 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200">
+                <p className="text-amber-700 text-sm font-medium">
+                  🔥 Play the Daily Challenge to build your streak and compete with friends!
                 </p>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
       </motion.div>
+
+      {/* Stats Modal */}
+      <StatsModal isOpen={showStats} onClose={() => setShowStats(false)} />
     </div>
   );
 };
