@@ -37,6 +37,15 @@ interface GameContextType {
   isChallenge: boolean;
   challengeStartTime: number | null;
   unusedLetters: string[];
+  // Shared input state for click-to-type
+  inputValue: string;
+  setInputValue: (value: string) => void;
+  addLetterToInput: (letter: string) => void;
+  removeLastLetter: () => void;
+  clearInput: () => void;
+  // Celebration trigger
+  triggerCelebration: boolean;
+  setTriggerCelebration: (value: boolean) => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -57,6 +66,27 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isChallenge, setIsChallenge] = useState<boolean>(false);
   const [challengeStartTime, setChallengeStartTime] = useState<number | null>(null);
   const [unusedLetters, setUnusedLetters] = useState<string[]>([]);
+  const [inputValue, setInputValue] = useState<string>("");
+  const [triggerCelebration, setTriggerCelebration] = useState<boolean>(false);
+
+  // Add a letter to the input (for click-to-type)
+  const addLetterToInput = (letter: string) => {
+    if (!gameActive) return;
+    const wordLen = currentWordSet?.wordLength || 5;
+    if (inputValue.length < wordLen) {
+      setInputValue(prev => prev + letter);
+    }
+  };
+
+  // Remove the last letter from input
+  const removeLastLetter = () => {
+    setInputValue(prev => prev.slice(0, -1));
+  };
+
+  // Clear the input
+  const clearInput = () => {
+    setInputValue("");
+  };
 
   // Effect to reset to JUMBL when game is not active
   useEffect(() => {
@@ -343,15 +373,22 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (currentWordSet.words.includes(normalizedWord)) {
       const updatedWords = [...foundWords, normalizedWord];
       setFoundWords(updatedWords);
-      
+
+      // Trigger celebration animation
+      setTriggerCelebration(true);
+      setTimeout(() => setTriggerCelebration(false), 100);
+
+      // Clear the input
+      clearInput();
+
       // Check if all words are found
       if (updatedWords.length === currentWordSet.words.length) {
         endGame();
       }
-      
+
       // Update unused letters after finding a word
       updateUnusedLetters();
-      
+
       return true;
     }
     
@@ -452,6 +489,13 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isChallenge,
         challengeStartTime,
         unusedLetters,
+        inputValue,
+        setInputValue,
+        addLetterToInput,
+        removeLastLetter,
+        clearInput,
+        triggerCelebration,
+        setTriggerCelebration,
       }}
     >
       {children}
