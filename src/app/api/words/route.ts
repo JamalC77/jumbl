@@ -175,8 +175,8 @@ export async function GET(request: Request) {
       }
     }
     
-    // Select 8 random words
-    const selectedWords = filteredWords.slice(0, 8).map(word => word.toUpperCase());
+    // Select 5 random words (simplified gameplay)
+    const selectedWords = filteredWords.slice(0, 5).map(word => word.toUpperCase());
     
     // Return the selected words
     return NextResponse.json({ 
