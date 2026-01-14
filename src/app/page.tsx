@@ -8,8 +8,8 @@ import { getDayNumber, getDailyStats, hasPlayedToday } from '@/utils/dailyChalle
 import { celebrateWordFound, celebrateWin } from '@/utils/confetti';
 import StatsModal from '@/components/StatsModal';
 
-// Simple Word Progress Grid with first letter shown
-const WordProgress = () => {
+// Simple Word Progress Grid with first letter shown + hint support
+const WordProgress = ({ revealedHints }: { revealedHints: Set<number> }) => {
   const { foundWords, currentWordSet, gameCompleted } = useGame();
   const allWords = currentWordSet?.words || [];
 
@@ -17,6 +17,7 @@ const WordProgress = () => {
     <div className="space-y-3">
       {allWords.map((word, index) => {
         const isFound = foundWords.includes(word);
+        const isHinted = revealedHints.has(index);
         return (
           <motion.div
             key={word}
@@ -25,29 +26,35 @@ const WordProgress = () => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.1 }}
           >
-            {word.split('').map((letter, letterIndex) => (
-              <div
-                key={letterIndex}
-                className={`w-11 h-11 md:w-12 md:h-12 flex items-center justify-center
-                  text-lg md:text-xl font-bold rounded-lg border-2 transition-all
-                  ${isFound
-                    ? 'bg-emerald-500 border-emerald-600 text-white shadow-md'
-                    : gameCompleted
-                      ? 'bg-gray-300 border-gray-400 text-gray-600'
-                      : letterIndex === 0
-                        ? 'bg-amber-100 border-amber-400 text-amber-700'
-                        : 'bg-white border-gray-300'
-                  }`}
-              >
-                {isFound || gameCompleted ? (
-                  letter
-                ) : letterIndex === 0 ? (
-                  letter
-                ) : (
-                  <span className="w-2.5 h-2.5 rounded-full bg-gray-300"></span>
-                )}
-              </div>
-            ))}
+            {word.split('').map((letter, letterIndex) => {
+              // Show letter if: found, game over, first letter, or hinted 2nd letter
+              const showLetter = isFound || gameCompleted || letterIndex === 0 || (isHinted && letterIndex === 1);
+              const isHintedLetter = !isFound && !gameCompleted && isHinted && letterIndex === 1;
+
+              return (
+                <div
+                  key={letterIndex}
+                  className={`w-11 h-11 md:w-12 md:h-12 flex items-center justify-center
+                    text-lg md:text-xl font-bold rounded-lg border-2 transition-all
+                    ${isFound
+                      ? 'bg-emerald-500 border-emerald-600 text-white shadow-md'
+                      : gameCompleted
+                        ? 'bg-gray-300 border-gray-400 text-gray-600'
+                        : letterIndex === 0
+                          ? 'bg-amber-100 border-amber-400 text-amber-700'
+                          : isHintedLetter
+                            ? 'bg-purple-100 border-purple-400 text-purple-700'
+                            : 'bg-white border-gray-300'
+                    }`}
+                >
+                  {showLetter ? (
+                    letter
+                  ) : (
+                    <span className="w-2.5 h-2.5 rounded-full bg-gray-300"></span>
+                  )}
+                </div>
+              );
+            })}
           </motion.div>
         );
       })}
@@ -81,9 +88,9 @@ const WordProgress = () => {
   );
 };
 
-// Letter Keyboard with Shuffle
+// Letter Keyboard with Shuffle and unused letter fading
 const LetterKeyboard = () => {
-  const { letters, gameActive, addLetterToInput, inputValue, wordLength, shuffleLetters } = useGame();
+  const { letters, gameActive, addLetterToInput, inputValue, wordLength, shuffleLetters, unusedLetters } = useGame();
 
   const colors = [
     'bg-pink-500', 'bg-orange-500', 'bg-yellow-500', 'bg-emerald-500',
@@ -118,21 +125,24 @@ const LetterKeyboard = () => {
     <div className="space-y-3">
       {/* Letter tiles */}
       <div className="flex flex-wrap justify-center gap-2 max-w-xs mx-auto">
-        {letters.split('').map((letter, index) => (
-          <motion.button
-            key={`${letter}-${index}`}
-            onClick={() => handleClick(letter)}
-            disabled={!gameActive}
-            className={`w-12 h-12 md:w-14 md:h-14 flex items-center justify-center
-              text-xl md:text-2xl font-bold text-white rounded-xl shadow-lg
-              ${colors[index % colors.length]}
-              ${gameActive ? 'hover:scale-110 active:scale-95' : 'opacity-50'}
-              transition-transform`}
-            whileTap={gameActive ? { scale: 0.9 } : {}}
-          >
-            {letter}
-          </motion.button>
-        ))}
+        {letters.split('').map((letter, index) => {
+          const isUnused = unusedLetters.includes(letter);
+          return (
+            <motion.button
+              key={`${letter}-${index}`}
+              onClick={() => handleClick(letter)}
+              disabled={!gameActive}
+              className={`w-12 h-12 md:w-14 md:h-14 flex items-center justify-center
+                text-xl md:text-2xl font-bold text-white rounded-xl shadow-lg
+                ${colors[index % colors.length]}
+                ${!gameActive ? 'opacity-50' : isUnused ? 'opacity-30 grayscale' : 'hover:scale-110 active:scale-95'}
+                transition-all`}
+              whileTap={gameActive && !isUnused ? { scale: 0.9 } : {}}
+            >
+              {letter}
+            </motion.button>
+          );
+        })}
       </div>
 
       {/* Shuffle button */}
@@ -310,10 +320,37 @@ const ProgressIndicator = () => {
 
 // Main Game Component
 const GameContent = () => {
-  const { gameActive, gameCompleted, startGame, startDailyChallenge, resetGame, isLoading, foundWords, totalWords } = useGame();
+  const { gameActive, gameCompleted, startGame, startDailyChallenge, resetGame, isLoading, foundWords, totalWords, currentWordSet } = useGame();
   const [showStats, setShowStats] = useState(false);
+  const [revealedHints, setRevealedHints] = useState<Set<number>>(new Set());
+  const [hintsUsed, setHintsUsed] = useState(0);
   const playedToday = hasPlayedToday();
   const stats = getDailyStats();
+
+  // Reset hints when game resets
+  useEffect(() => {
+    if (!gameActive && !gameCompleted) {
+      setRevealedHints(new Set());
+      setHintsUsed(0);
+    }
+  }, [gameActive, gameCompleted]);
+
+  // Use a hint - reveals 2nd letter of first unfound word
+  const useHint = () => {
+    if (!currentWordSet || hintsUsed >= 1) return; // Only 1 hint allowed
+
+    const allWords = currentWordSet.words;
+    // Find first unfound word that hasn't been hinted
+    for (let i = 0; i < allWords.length; i++) {
+      if (!foundWords.includes(allWords[i]) && !revealedHints.has(i)) {
+        setRevealedHints(new Set([...revealedHints, i]));
+        setHintsUsed(hintsUsed + 1);
+        break;
+      }
+    }
+  };
+
+  const canUseHint = gameActive && hintsUsed < 1 && foundWords.length < totalWords;
 
   return (
     <div className="w-full max-w-md mx-auto">
@@ -341,8 +378,26 @@ const GameContent = () => {
 
         {/* Word Progress Grid */}
         <div className="mb-6">
-          <WordProgress />
+          <WordProgress revealedHints={revealedHints} />
         </div>
+
+        {/* Hint Button */}
+        {gameActive && (
+          <div className="flex justify-center mb-4">
+            <button
+              onClick={useHint}
+              disabled={!canUseHint}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-all
+                ${canUseHint
+                  ? 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                  : 'bg-gray-100 text-gray-400'
+                }`}
+            >
+              <span>💡</span>
+              {hintsUsed >= 1 ? 'Hint Used' : 'Use Hint'}
+            </button>
+          </div>
+        )}
 
         {/* Current Input */}
         <CurrentInput />
