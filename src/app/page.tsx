@@ -228,7 +228,7 @@ const ActionButtons = () => {
       if (isAlmostCorrect(inputValue)) {
         setFeedback('Almost! Try rearranging');
       } else {
-        setFeedback('Not a valid word');
+        setFeedback('Nope, try again!');
       }
       clearInput();
       setTimeout(() => setFeedback(null), 1500);
